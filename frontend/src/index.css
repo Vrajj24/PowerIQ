@@ -1,0 +1,106 @@
+@import "tailwindcss";
+
+@theme {
+  --color-enterprise-950: #f4f1ea; /* Warm beige background */
+  --color-enterprise-900: #faf9f5; /* Warm ivory panel */
+  --color-enterprise-850: #ffffff; /* pure white */
+  --color-enterprise-800: #0f172a; /* Slate 900 text */
+  --color-enterprise-700: #1e293b;
+  --color-enterprise-600: #475569;
+  --color-enterprise-primary: #1a2a3a; /* Midnight Indigo */
+  --color-enterprise-secondary: #c5a059; /* Champagne Brass */
+  
+  --font-serif: 'EB Garamond', serif;
+  --font-sans: 'Inter', sans-serif;
+}
+
+@utility font-serif {
+  font-family: 'EB Garamond', serif;
+}
+
+@utility font-sans {
+  font-family: 'Inter', sans-serif;
+}
+
+@utility editorial-card {
+  background-color: #ffffff;
+  border: 2px solid #0f172a;
+  border-radius: 12px;
+  box-shadow: 2px 2px 0px 0px rgba(15, 23, 42, 1);
+  transition: all 0.15s ease-in-out;
+}
+
+@utility editorial-card-hover {
+  &:hover {
+    transform: translate(-1px, -1px);
+    box-shadow: 3px 3px 0px 0px rgba(15, 23, 42, 1);
+  }
+}
+
+@utility editorial-btn {
+  border: 2px solid #0f172a;
+  box-shadow: 2px 2px 0px 0px rgba(15, 23, 42, 1);
+  transition: all 0.15s ease-in-out;
+  
+  &:active {
+    transform: translate(1px, 1px);
+    box-shadow: 1px 1px 0px 0px rgba(15, 23, 42, 1);
+  }
+  
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+  }
+}
+
+@utility editorial-input {
+  background-color: #ffffff;
+  border: 2px solid #0f172a;
+  border-radius: 8px;
+  transition: all 0.15s ease-in-out;
+  
+  &:focus {
+    outline: none;
+    box-shadow: 2px 2px 0px 0px rgba(15, 23, 42, 1);
+  }
+}
+
+/* Custom editorial scrollbars */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f4f1ea;
+  border-left: 2px solid #0f172a;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #0f172a;
+  border: 2px solid #f4f1ea;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #c5a059;
+}
+
+body {
+  background-color: #f4f1ea; /* Warm beige background */
+  color: #0f172a; /* Slate 900 text */
+  font-family: 'Inter', sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+@keyframes power-spark {
+  0%, 100% { transform: scale(0.95); opacity: 0.85; filter: drop-shadow(0 0 2px rgba(197, 160, 89, 0.15)); }
+  50% { transform: scale(1.1); opacity: 1; filter: drop-shadow(0 0 10px rgba(197, 160, 89, 0.7)); }
+}
+
+.spark-anim {
+  animation: power-spark 1.2s infinite ease-in-out;
+}
+
