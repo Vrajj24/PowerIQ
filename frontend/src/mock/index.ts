@@ -4,81 +4,81 @@ export const INITIAL_DEVICES: Device[] = [
   {
     id: 'dev_ac',
     name: 'Air Conditioner',
-    room: 'Living Room',
+    roomId: 'Living Room',
     type: 'HVAC',
-    ratedPower: 1800,
-    currentConsumption: 1450,
-    status: 'on',
+    
+    powerDraw: 1450,
+    status: 'online',
     lastUpdated: new Date().toISOString(),
   },
   {
     id: 'dev_fridge',
     name: 'Smart Refrigerator',
-    room: 'Kitchen',
+    roomId: 'Kitchen',
     type: 'Appliance',
-    ratedPower: 300,
-    currentConsumption: 120,
-    status: 'on',
+    
+    powerDraw: 120,
+    status: 'online',
     lastUpdated: new Date().toISOString(),
   },
   {
     id: 'dev_fan',
     name: 'Ceiling Fan',
-    room: 'Master Bedroom',
+    roomId: 'Master Bedroom',
     type: 'Climate',
-    ratedPower: 75,
-    currentConsumption: 65,
-    status: 'on',
+    
+    powerDraw: 65,
+    status: 'online',
     lastUpdated: new Date().toISOString(),
   },
   {
     id: 'dev_tv',
     name: 'OLED Television',
-    room: 'Living Room',
+    roomId: 'Living Room',
     type: 'Entertainment',
-    ratedPower: 150,
-    currentConsumption: 0,
-    status: 'off',
+    
+    powerDraw: 0,
+    status: 'offline',
     lastUpdated: new Date().toISOString(),
   },
   {
     id: 'dev_wm',
     name: 'Washing Machine',
-    room: 'Laundry Room',
+    roomId: 'Laundry Room',
     type: 'Appliance',
-    ratedPower: 650,
-    currentConsumption: 0,
-    status: 'standby',
+    
+    powerDraw: 0,
+    status: 'offline',
     lastUpdated: new Date().toISOString(),
   },
   {
     id: 'dev_lights',
     name: 'LED Ceiling Lights',
-    room: 'Kitchen',
+    roomId: 'Kitchen',
     type: 'Lighting',
-    ratedPower: 120,
-    currentConsumption: 95,
-    status: 'on',
+    
+    powerDraw: 95,
+    status: 'online',
     lastUpdated: new Date().toISOString(),
   },
   {
     id: 'dev_microwave',
     name: 'Microwave Oven',
-    room: 'Kitchen',
+    roomId: 'Kitchen',
     type: 'Appliance',
-    ratedPower: 1200,
-    currentConsumption: 0,
-    status: 'off',
+    
+    powerDraw: 0,
+    status: 'offline',
     lastUpdated: new Date().toISOString(),
   },
   {
     id: 'dev_heater',
     name: 'Water Heater',
-    room: 'Bathroom',
+    roomId: 'Bathroom',
     type: 'Utility',
-    ratedPower: 2500,
-    currentConsumption: 2200,
-    status: 'on',
+    
+    powerDraw: 2200,
+    status: 'online',
     lastUpdated: new Date().toISOString(),
   },
 ];
@@ -207,10 +207,12 @@ export const ROOM_DISTRIBUTION = [
 ];
 
 export const MOCK_SUMMARY: UsageSummary = {
-  currentPower: 3.93, // kW sum of all active devices (1450 + 120 + 65 + 95 + 2200 = 3930W = 3.93kW)
-  todayUsage: 26.4, // kWh
-  monthlyUsage: 980, // kWh for July
-  estimatedBill: 7840.00, // INR
+  currentPower: 3.93,
+  todayUsage: 26.4,
+  dailyUsage: 26.4,
+  monthlyUsage: 980,
+  estimatedBill: 7840.00,
   activeDevices: 5,
-  efficiencyScore: 88, // A grade
+  totalDevices: 8,
+  efficiencyScore: 88,
 };

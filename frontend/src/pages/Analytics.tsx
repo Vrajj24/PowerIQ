@@ -23,7 +23,9 @@ import {
   Legend 
 } from 'recharts';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/Card';
-import { HOURLY_TELEMETRY, WEEKLY_USAGE, MONTHLY_USAGE, ROOM_DISTRIBUTION } from '../mock';
+import { useEffect } from 'react';
+import { ROOM_DISTRIBUTION } from '../mock';
+import { analyticsService } from '../services/analyticsService';
 
 const CustomTooltip = ({ active, payload, label }: any) => {
   if (active && payload && payload.length) {
@@ -53,28 +55,54 @@ export default function Analytics() {
     );
   }
   const [timeRange, setTimeRange] = useState<'today' | '7days' | '30days'>('today');
+  const [chartData, setChartData] = useState<any[]>([]);
+
+  useEffect(() => {
+    const fetchHistorical = async () => {
+      try {
+        const days = timeRange === 'today' ? 1 : timeRange === '7days' ? 7 : 30;
+        const data = await analyticsService.getHistoricalData(days);
+        
+        let formatted;
+        if (timeRange === 'today') {
+           formatted = data.map((d: any) => ({
+             timestamp: new Date(d.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}),
+             activePower: d.powerDraw
+           }));
+        } else if (timeRange === '7days') {
+           formatted = data.map((d: any) => ({
+             day: new Date(d.timestamp).toLocaleDateString('en-US', { weekday: 'short' }),
+             usage: d.powerDraw,
+             solar: 0 
+           }));
+        } else {
+           formatted = data.map((d: any) => ({
+             month: new Date(d.timestamp).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+             usage: d.powerDraw
+           }));
+        }
+        setChartData(formatted);
+      } catch (e) {
+        console.error('Failed to fetch historical data', e);
+      }
+    };
+    fetchHistorical();
+  }, [timeRange]);
 
   // Dynamic calculations from context
-  const activeDevicesList = devices.filter(d => d.status === 'on');
   
-  // Find highest consuming device
-  const highestDevice = devices.length > 0 
-    ? [...devices].sort((a, b) => b.currentConsumption - a.currentConsumption)[0] 
-    : null;
-
-  // Find lowest consuming active device
-  const lowestActiveDevice = activeDevicesList.length > 0 
-    ? [...activeDevicesList].sort((a, b) => a.currentConsumption - b.currentConsumption)[0] 
-    : null;
+  // Determine highest/lowest consumers from real data
+  const highestDevice = devices.length > 0 ? devices.reduce((prev, curr) => (prev.powerDraw > curr.powerDraw) ? prev : curr) : null;
+  const lowestActiveDevice = devices.length > 0 ? devices.filter(d => d.status === 'on' || d.status === 'online').reduce((prev, curr) => (prev.powerDraw < curr.powerDraw) ? prev : curr, devices[0]) : null;
 
   // Calculate room-wise distribution dynamically based on current context
   const roomLoads: { [key: string]: number } = {};
   devices.forEach(d => {
-    if (d.status === 'on') {
-      roomLoads[d.room] = (roomLoads[d.room] || 0) + d.currentConsumption;
+    if (d.roomId && d.powerDraw) {
+      roomLoads[d.roomId] = (roomLoads[d.roomId] || 0) + d.powerDraw;
     }
   });
-
+  
   const totalActiveLoad = Object.values(roomLoads).reduce((sum, val) => sum + val, 0);
   
   const dynamicRoomDistribution = Object.entries(roomLoads).map(([name, value], idx) => {
@@ -94,8 +122,8 @@ export default function Analytics() {
   // Device comparison data
   const deviceComparisonData = devices.map(d => ({
     name: d.name,
-    consumption: d.currentConsumption,
-    rated: d.ratedPower
+    consumption: d.powerDraw,
+    rated: d.powerDraw * 1.5 // Mock rated based on powerDraw
   })).sort((a, b) => b.consumption - a.consumption);
 
   // Generate dynamic insights text based on load configurations
@@ -103,11 +131,11 @@ export default function Analytics() {
     const list = [];
     
     // Insight 1: Highest consuming device
-    if (highestDevice && highestDevice.status === 'on') {
+    if (highestDevice && (highestDevice.status === 'on' || highestDevice.status === 'online')) {
       list.push({
         type: 'warning',
         title: 'High Load Alert',
-        desc: `${highestDevice.name} in the ${highestDevice.room} is currently drawing ${highestDevice.currentConsumption}W, making up ${Math.round((highestDevice.currentConsumption / (summary.currentPower * 1000 || 1)) * 100)}% of your active load.`
+        desc: `${highestDevice.name} in the ${highestDevice.roomId} is currently drawing ${highestDevice.powerDraw}W, making up ${Math.round((highestDevice.powerDraw / (summary.currentPower * 1000 || 1)) * 100)}% of your active load.`
       });
     }
 
@@ -129,7 +157,8 @@ export default function Analytics() {
     });
 
     // Insight 4: Efficiency optimization
-    if (summary.efficiencyScore < 85) {
+    const effScore = summary.efficiencyScore || 85;
+    if (effScore < 85) {
       list.push({
         type: 'warning',
         title: 'Optimize Energy Efficiency',
@@ -192,10 +221,10 @@ export default function Analytics() {
               {highestDevice ? highestDevice.name : 'None'}
             </h3>
             <p className="text-3xl font-bold text-slate-900 mt-1 font-serif">
-              {highestDevice && highestDevice.status === 'on' ? highestDevice.currentConsumption : 0} <span className="text-xs font-semibold text-slate-505 text-slate-500 font-sans">W</span>
+              {highestDevice && (highestDevice.status === 'on' || highestDevice.status === 'online') ? Number(highestDevice.powerDraw).toFixed(2) : 0} <span className="text-xs font-semibold text-slate-505 text-slate-500 font-sans">W</span>
             </p>
           </div>
-          <span className="text-[10px] font-bold text-slate-500 uppercase mt-2 block">{highestDevice ? highestDevice.room : '-'}</span>
+          <span className="text-[10px] font-bold text-slate-500 uppercase mt-2 block">{highestDevice ? highestDevice.roomId : '-'}</span>
         </Card>
 
         {/* KPI 2: Lowest Appliance load */}
@@ -206,10 +235,10 @@ export default function Analytics() {
               {lowestActiveDevice ? lowestActiveDevice.name : 'None'}
             </h3>
             <p className="text-3xl font-bold text-slate-900 mt-1 font-serif">
-              {lowestActiveDevice ? lowestActiveDevice.currentConsumption : 0} <span className="text-xs font-semibold text-slate-505 text-slate-500 font-sans">W</span>
+              {lowestActiveDevice ? Number(lowestActiveDevice.powerDraw).toFixed(2) : 0} <span className="text-xs font-semibold text-slate-505 text-slate-500 font-sans">W</span>
             </p>
           </div>
-          <span className="text-[10px] font-bold text-slate-500 uppercase mt-2 block">{lowestActiveDevice ? lowestActiveDevice.room : '-'}</span>
+          <span className="text-[10px] font-bold text-slate-500 uppercase mt-2 block">{lowestActiveDevice ? lowestActiveDevice.roomId : '-'}</span>
         </Card>
 
         {/* KPI 3: Average daily usage */}
@@ -273,7 +302,7 @@ export default function Analytics() {
           <CardContent className="h-80">
             {timeRange === 'today' && (
               <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={HOURLY_TELEMETRY} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                <LineChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#cbd5e1" opacity={0.5} />
                   <XAxis dataKey="timestamp" stroke="#475569" fontSize={10} tickLine={false} />
                   <YAxis stroke="#475569" fontSize={10} tickLine={false} />
@@ -285,7 +314,7 @@ export default function Analytics() {
 
             {timeRange === '7days' && (
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={WEEKLY_USAGE} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                <BarChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#cbd5e1" opacity={0.5} />
                   <XAxis dataKey="day" stroke="#475569" fontSize={10} tickLine={false} />
                   <YAxis stroke="#475569" fontSize={10} tickLine={false} />
@@ -299,7 +328,7 @@ export default function Analytics() {
 
             {timeRange === '30days' && (
               <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={MONTHLY_USAGE} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                <AreaChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                   <defs>
                     <linearGradient id="areaUsage" x1="0" y1="0" x2="0" y2="1">
                       <stop offset="5%" stopColor="#1a2a3a" stopOpacity={0.15}/>

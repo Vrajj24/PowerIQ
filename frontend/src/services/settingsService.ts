@@ -1,4 +1,4 @@
-import { simulateDelay } from './api';
+
 
 export const settingsService = {
   getSettings: async (): Promise<any> => {
@@ -14,11 +14,11 @@ export const settingsService = {
       currency: 'INR',
       powerLimit: 5.5
     };
-    return simulateDelay(settings);
+    return Promise.resolve(settings);
   },
 
   updateSettings: async (settings: any): Promise<any> => {
     localStorage.setItem('poweriq_settings', JSON.stringify(settings));
-    return simulateDelay(settings, 200);
+    return Promise.resolve(settings);
   }
 };

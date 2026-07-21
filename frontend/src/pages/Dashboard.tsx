@@ -46,7 +46,15 @@ const CustomTooltip = ({ active, payload, label }: any) => {
 };
 
 export default function Dashboard() {
-  const { devices, alerts, summary, toggleDeviceStatus } = useDevices();
+  const { devices, alerts, summary, toggleDeviceStatus, error } = useDevices();
+
+  if (error) {
+    return (
+      <div className="flex justify-center items-center h-[50vh] text-red-500 font-bold text-xl">
+        Error loading backend data: {error}
+      </div>
+    );
+  }
 
   if (!summary) {
     return (
@@ -67,7 +75,7 @@ export default function Dashboard() {
   };
 
   const activeAlerts = alerts.filter(a => !a.read);
-  const sortedDevices = [...devices].sort((a, b) => b.currentConsumption - a.currentConsumption);
+  const sortedDevices = [...devices].sort((a, b) => b.powerDraw - a.powerDraw);
   const topDevices = sortedDevices.slice(0, 4);
 
   const getSeverityBadgeClass = (severity: string) => {
@@ -126,7 +134,7 @@ export default function Dashboard() {
             </div>
           </div>
           <p className="text-3xl font-bold font-serif text-slate-900 tracking-tight">
-            {summary.todayUsage} <span className="text-xs font-semibold text-slate-500">kWh</span>
+            {summary.dailyUsage} <span className="text-xs font-semibold text-slate-500">kWh</span>
           </p>
           <div className="flex items-center gap-1 text-[9px] font-bold text-emerald-800 mt-2">
             <TrendingDown size={11} />
@@ -192,7 +200,7 @@ export default function Dashboard() {
             </div>
           </div>
           <p className="text-3xl font-bold font-serif text-slate-900 tracking-tight">
-            {summary.efficiencyScore}% <span className="text-xs font-bold text-[#c5a059]">({getEfficiencyGrade(summary.efficiencyScore)})</span>
+            {summary.efficiencyScore}% <span className="text-xs font-bold text-[#c5a059]">({getEfficiencyGrade(summary.efficiencyScore || 85)})</span>
           </p>
           <div className="flex items-center gap-1 text-[9px] font-bold text-emerald-800 mt-2">
             <TrendingUp size={11} />
@@ -281,16 +289,16 @@ export default function Dashboard() {
           </CardHeader>
           <CardContent className="space-y-4">
             {topDevices.map((device) => {
-              const pctOfRated = device.ratedPower > 0 ? (device.currentConsumption / device.ratedPower) * 100 : 0;
+              const pctOfRated = device.powerDraw > 0 ? (device.powerDraw / device.powerDraw) * 100 : 0;
               return (
                 <div key={device.id} className="p-3 bg-[#faf9f5] border-2 border-slate-900 rounded-xl flex items-center justify-between gap-4 shadow-[2px_2px_0px_0px_rgba(15,23,42,1)]">
                   <div className="flex items-center gap-3">
                     <button 
                       onClick={() => toggleDeviceStatus(device.id)}
                       className={`w-9 h-9 rounded-lg border-2 flex items-center justify-center transition-all duration-150 active:translate-x-[1px] active:translate-y-[1px] active:shadow-[1px_1px_0px_0px_rgba(15,23,42,1)]
-                        ${device.status === 'on' 
+                        ${device.status === 'online' 
                           ? 'bg-[#1a2a3a] border-slate-900 text-white shadow-[2px_2px_0px_0px_rgba(15,23,42,1)] hover:bg-[#25394e]' 
-                          : device.status === 'standby'
+                          : device.status === 'offline'
                             ? 'bg-amber-100 border-slate-900 text-amber-900 shadow-[2px_2px_0px_0px_rgba(15,23,42,1)]'
                             : 'bg-white border-slate-300 text-slate-400'
                         }
@@ -300,34 +308,34 @@ export default function Dashboard() {
                     </button>
                     <div className="text-left">
                       <h4 className="text-sm font-bold font-serif text-slate-900 leading-tight">{device.name}</h4>
-                      <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wide mt-0.5">{device.room} • {device.type}</p>
+                      <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wide mt-0.5">{device.roomId} • {device.type}</p>
                     </div>
                   </div>
                   
                   {/* Energy Bar Load */}
                   <div className="hidden sm:block flex-1 max-w-[200px] text-left">
                     <div className="flex items-center justify-between text-[9px] font-bold text-slate-500 uppercase tracking-wider mb-1">
-                      <span>Rated: {device.ratedPower}W</span>
+                      <span>Rated: {Number(device.powerDraw).toFixed(1)}W</span>
                       <span>{Math.round(pctOfRated)}% load</span>
                     </div>
                     <div className="w-full h-2 bg-white rounded-md overflow-hidden border-2 border-slate-900">
                       <div 
                         className={`h-full transition-all duration-300 ${
-                          device.status === 'on' ? 'bg-[#c5a059]' : 'bg-slate-200'
+                          device.status === 'online' ? 'bg-[#c5a059]' : 'bg-slate-200'
                         }`} 
-                        style={{ width: `${device.status === 'on' ? Math.max(10, Math.min(100, pctOfRated)) : 0}%` }} 
+                        style={{ width: `${device.status === 'online' ? Math.max(10, Math.min(100, pctOfRated)) : 0}%` }} 
                       />
                     </div>
                   </div>
 
                   <div className="text-right">
                     <p className="text-sm font-bold text-slate-900 font-serif">
-                      {device.currentConsumption} <span className="text-[10px] font-normal text-slate-500 font-sans">W</span>
+                      {Number(device.powerDraw).toFixed(1)} <span className="text-[10px] font-normal text-slate-500 font-sans">W</span>
                     </p>
                     <span className={`inline-block text-[8px] uppercase font-bold tracking-wider rounded-md px-1.5 py-0.5 mt-1 border-2
-                      ${device.status === 'on' 
+                      ${device.status === 'online' 
                         ? 'bg-emerald-50 border-emerald-900 text-emerald-900' 
-                        : device.status === 'standby'
+                        : device.status === 'offline'
                           ? 'bg-amber-50 border-amber-900 text-amber-900'
                           : 'bg-white border-slate-400 text-slate-500'
                       }
@@ -363,12 +371,12 @@ export default function Dashboard() {
               activeAlerts.slice(0, 3).map((alert) => (
                 <div 
                   key={alert.id} 
-                  className={`p-3 rounded-xl border-2 flex gap-3 text-xs leading-normal ${getSeverityBadgeClass(alert.severity)}`}
+                  className={`p-3 rounded-xl border-2 flex gap-3 text-xs leading-normal ${getSeverityBadgeClass(alert.severity as any)}`}
                 >
                   <AlertOctagon size={16} className="shrink-0 mt-0.5" />
                   <div className="space-y-1 text-left">
                     <div className="flex items-center justify-between font-bold">
-                      <span>{alert.title}</span>
+                      <span>{alert.message}</span>
                       <span className="opacity-60 text-[9px] font-normal flex items-center gap-1">
                         <Clock size={10} />
                         {new Date(alert.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}

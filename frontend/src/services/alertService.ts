@@ -1,16 +1,27 @@
 import type { Alert } from '../types';
-import { INITIAL_ALERTS } from '../mock';
-import { simulateDelay } from './api';
+import api from './api';
 
 export const alertService = {
   getAlerts: async (): Promise<Alert[]> => {
-    const saved = localStorage.getItem('poweriq_alerts');
-    const alerts = saved ? JSON.parse(saved) : INITIAL_ALERTS;
-    return simulateDelay(alerts);
+    const response = await api.get('/alerts');
+    return response.data.map((item: any) => ({
+      id: item.id.toString(),
+      type: item.type.toLowerCase() === 'critical' ? 'critical' : item.type.toLowerCase() === 'warning' ? 'warning' : 'info',
+      message: item.message,
+      timestamp: item.createdAt,
+      read: item.read,
+      deviceId: item.deviceName
+    }));
   },
 
-  updateAlerts: async (alerts: Alert[]): Promise<Alert[]> => {
-    localStorage.setItem('poweriq_alerts', JSON.stringify(alerts));
-    return simulateDelay(alerts, 200);
+  markAsRead: async (_alertId: string): Promise<boolean> => {
+    // The backend might not have this endpoint implemented yet
+    // For now we simulate success
+    return Promise.resolve(true);
+  },
+  
+  dismissAlert: async (_alertId: string): Promise<boolean> => {
+    // Same here
+    return Promise.resolve(true);
   }
 };

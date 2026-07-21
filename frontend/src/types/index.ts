@@ -5,44 +5,55 @@ export interface User {
   avatarUrl?: string;
 }
 
-export type DeviceStatus = 'on' | 'off' | 'standby';
+export type DeviceStatus = 'online' | 'offline';
 
 export interface Device {
   id: string;
   name: string;
-  room: string;
+  roomId?: string;
   type: string;
-  ratedPower: number; // in Watts
-  currentConsumption: number; // in Watts (active consumption)
-  status: DeviceStatus;
-  lastUpdated: string; // ISO String
+  powerDraw: number;
+  status: string; // "online" | "offline"
+  lastUpdated?: string; 
 }
 
 export type AlertSeverity = 'info' | 'warning' | 'critical';
 
 export interface Alert {
   id: string;
-  title: string;
+  type?: string; 
+  title?: string; // Keep for UI compat
   message: string;
-  category: 'energy' | 'device' | 'system' | 'billing';
-  severity: AlertSeverity;
+  category?: 'energy' | 'device' | 'system' | 'billing';
+  severity?: AlertSeverity;
   timestamp: string;
   deviceId?: string;
   read: boolean;
 }
 
 export interface TelemetryPoint {
-  timestamp: string; // e.g. "14:00"
-  activePower: number; // in kW
-  solarGeneration?: number; // in kW
-  batteryLevel?: number; // percentage
+  timestamp: string;
+  activePower: number;
+  solarGeneration?: number;
+  batteryLevel?: number;
 }
 
-export interface UsageSummary {
-  currentPower: number; // in kW
-  todayUsage: number; // in kWh
-  monthlyUsage: number; // in kWh
-  estimatedBill: number; // in INR
+export interface DashboardSummary {
+  currentPower: number;
+  dailyUsage: number;
+  monthlyUsage: number;
+  estimatedBill: number;
   activeDevices: number;
-  efficiencyScore: number; // 0-100 or grade
+  totalDevices: number;
+}
+
+export interface UsageSummary extends DashboardSummary {
+  todayUsage?: number;
+  efficiencyScore?: number;
+}
+
+export interface AnalyticsData {
+  timestamp: string;
+  powerDraw: number;
+  activeDevices: number;
 }

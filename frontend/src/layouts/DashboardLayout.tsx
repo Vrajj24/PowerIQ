@@ -3,7 +3,6 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import poweriqLogo from '../assets/poweriq-logo.png';
 import { 
   LayoutDashboard, 
-  Zap, 
   BarChart3, 
   FileText, 
   Bell, 
@@ -203,7 +202,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                               markAlertRead(n.id);
                             }}
                             className={`p-2.5 rounded-lg text-xs space-y-1 cursor-pointer transition-all border-2
-                              ${getAlertColor(n.severity)}
+                              ${getAlertColor(n.severity as any)}
                               ${n.read ? 'opacity-40 border-slate-200 hover:opacity-60' : 'border-slate-900 hover:-translate-y-[1px] hover:shadow-[2px_2px_0px_0px_rgba(15,23,42,1)]'}
                             `}
                           >

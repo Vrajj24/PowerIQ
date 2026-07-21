@@ -22,10 +22,10 @@ import { Input } from '../components/ui/Input';
 // Zod schema for Add/Edit Device forms
 const deviceSchema = z.object({
   name: z.string().min(2, 'Device name must be at least 2 characters'),
-  room: z.string().min(1, 'Room is required'),
+  roomId: z.string().min(1, 'Room is required'),
   type: z.string().min(1, 'Device type is required'),
-  ratedPower: z.coerce.number().int().positive('Rated power must be a positive number'),
-  status: z.enum(['on', 'off', 'standby']),
+  powerDraw: z.coerce.number().positive('Power draw must be positive'),
+  status: z.enum(['online', 'offline']),
 });
 
 type DeviceFormValues = z.infer<typeof deviceSchema>;
@@ -55,7 +55,7 @@ export default function Devices() {
     formState: { errors: errorsAdd }
   } = useForm<DeviceFormValues>({
     resolver: zodResolver(deviceSchema) as any,
-    defaultValues: { name: '', room: '', type: 'Appliance', ratedPower: 100, status: 'off' }
+    defaultValues: { name: '', roomId: 'living-room', type: 'Appliance', powerDraw: 0, status: 'offline' }
   });
 
   const {
@@ -79,10 +79,10 @@ export default function Devices() {
     setEditingDevice(device);
     resetEdit({
       name: device.name,
-      room: device.room,
+      roomId: device.roomId || '',
       type: device.type,
-      ratedPower: device.ratedPower,
-      status: device.status
+      powerDraw: device.powerDraw,
+      status: device.status as 'online' | 'offline'
     });
   };
 
@@ -103,29 +103,29 @@ export default function Devices() {
   };
 
   // Get distinct list of rooms for filter select
-  const rooms = ['all', ...Array.from(new Set(devices.map(d => d.room)))];
+  const rooms = ['all', ...Array.from(new Set(devices.map(d => d.roomId)))];
 
   // Filter and Sort devices
   const processedDevices = devices
     .filter(d => {
       const matchesSearch = d.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
-                            d.room.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                            (d.roomId || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
                             d.type.toLowerCase().includes(searchQuery.toLowerCase());
-      const matchesRoom = selectedRoom === 'all' || d.room === selectedRoom;
+      const matchesRoom = selectedRoom === 'all' || d.roomId === selectedRoom;
       const matchesStatus = selectedStatus === 'all' || d.status === selectedStatus;
       return matchesSearch && matchesRoom && matchesStatus;
     })
     .sort((a, b) => {
-      if (sortBy === 'power') return b.ratedPower - a.ratedPower;
-      if (sortBy === 'consumption') return b.currentConsumption - a.currentConsumption;
+      if (sortBy === 'power') return b.powerDraw - a.powerDraw;
+      if (sortBy === 'consumption') return b.powerDraw - a.powerDraw;
       return a.name.localeCompare(b.name);
     });
 
   const getStatusBadge = (status: DeviceStatus) => {
     switch (status) {
-      case 'on':
+      case 'online':
         return 'bg-emerald-50 border-2 border-emerald-950 text-emerald-950 font-bold';
-      case 'standby':
+      case 'offline':
         return 'bg-amber-50 border-2 border-amber-950 text-amber-950 font-bold';
       default:
         return 'bg-slate-50 border-2 border-slate-400 text-slate-500 font-bold';
@@ -185,9 +185,9 @@ export default function Devices() {
               className="bg-white border-2 border-slate-900 rounded-lg px-2.5 py-1 text-xs text-slate-900 font-bold uppercase tracking-wider outline-none focus:shadow-[2px_2px_0px_0px_rgba(15,23,42,1)]"
             >
               <option value="all">All Statuses</option>
-              <option value="on">On</option>
-              <option value="off">Off</option>
-              <option value="standby">Standby</option>
+              <option value="online">On</option>
+              <option value="offline">Off</option>
+              <option value="offline">Standby</option>
             </select>
 
             <select 
@@ -232,16 +232,16 @@ export default function Devices() {
       {viewMode === 'grid' && processedDevices.length > 0 && (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           {processedDevices.map((device) => {
-            const isRunning = device.status === 'on';
+            const isRunning = device.status === 'online';
             return (
               <Card key={device.id} hoverEffect={true} className="flex flex-col justify-between h-56 relative group">
                 <div>
                   <div className="flex items-start justify-between">
                     <div>
                       <h3 className="font-bold text-slate-900 tracking-wide text-sm font-serif line-clamp-1">{device.name}</h3>
-                      <p className="text-[10px] text-slate-500 mt-0.5">{device.room}</p>
+                      <p className="text-[10px] text-slate-500 mt-0.5">{device.roomId}</p>
                     </div>
-                    <span className={`text-[9px] uppercase tracking-wider font-extrabold border-2 rounded-md px-1.5 py-0.5 ${getStatusBadge(device.status)}`}>
+                    <span className={`text-[9px] uppercase tracking-wider font-extrabold border-2 rounded-md px-1.5 py-0.5 ${getStatusBadge(device.status as DeviceStatus)}`}>
                       {device.status}
                     </span>
                   </div>
@@ -250,13 +250,13 @@ export default function Devices() {
                     <div>
                       <span className="block text-[8px] uppercase tracking-wider text-slate-500 font-bold">Active Load</span>
                       <span className="text-base font-bold text-slate-900 font-serif">
-                        {device.currentConsumption} <span className="text-[10px] font-normal text-slate-500 font-sans">W</span>
+                        {Number(device.powerDraw).toFixed(1)} <span className="text-[10px] font-normal text-slate-500 font-sans">W</span>
                       </span>
                     </div>
                     <div className="text-right">
                       <span className="block text-[8px] uppercase tracking-wider text-slate-500 font-bold">Capacity</span>
                       <span className="text-xs font-bold text-slate-700 font-serif">
-                        {device.ratedPower}W
+                        {Number(device.powerDraw).toFixed(1)}W
                       </span>
                     </div>
                   </div>
@@ -268,7 +268,7 @@ export default function Devices() {
                     className={`px-3 py-1.5 text-[10px] uppercase font-bold tracking-wider rounded-md border-2 transition-all duration-150 active:translate-x-[1px] active:translate-y-[1px] active:shadow-[1px_1px_0px_0px_rgba(15,23,42,1)]
                       ${isRunning 
                         ? 'bg-[#1a2a3a] border-slate-900 text-white shadow-[1px_1px_0px_0px_rgba(15,23,42,1)] hover:bg-[#25394e]' 
-                        : device.status === 'standby'
+                        : device.status === 'offline'
                           ? 'bg-amber-100 border-slate-900 text-amber-900 shadow-[1px_1px_0px_0px_rgba(15,23,42,1)] hover:bg-amber-200'
                           : 'bg-white border-slate-900 text-slate-700 shadow-[1px_1px_0px_0px_rgba(15,23,42,1)] hover:bg-slate-50'
                       }
@@ -318,18 +318,18 @@ export default function Devices() {
               {processedDevices.map((device) => (
                 <tr key={device.id} className="hover:bg-slate-50 transition-colors text-slate-700">
                   <td className="p-4 font-bold text-slate-900 font-serif text-sm">{device.name}</td>
-                  <td className="p-4 font-semibold">{device.room}</td>
+                  <td className="p-4 font-semibold">{device.roomId}</td>
                   <td className="p-4">
                     <span className="bg-slate-50 border-2 border-slate-900 px-2 py-0.5 rounded-md text-[8px] uppercase font-bold tracking-wider text-slate-700">
                       {device.type}
                     </span>
                   </td>
-                  <td className="p-4 text-right font-bold">{device.ratedPower} W</td>
-                  <td className="p-4 text-right font-bold text-slate-900 font-serif">{device.currentConsumption} W</td>
+                  <td className="p-4 text-right font-bold">{Number(device.powerDraw).toFixed(1)} W</td>
+                  <td className="p-4 text-right font-bold text-slate-900 font-serif">{Number(device.powerDraw).toFixed(1)} W</td>
                   <td className="p-4 text-center">
                     <button 
                       onClick={() => toggleDeviceStatus(device.id)}
-                      className={`px-2 py-0.5 text-[9px] uppercase tracking-wider font-extrabold rounded-md border-2 transition-all active:scale-[0.97] ${getStatusBadge(device.status)}`}
+                      className={`px-2 py-0.5 text-[9px] uppercase tracking-wider font-extrabold rounded-md border-2 transition-all active:scale-[0.97] ${getStatusBadge(device.status as DeviceStatus)}`}
                     >
                       {device.status}
                     </button>
@@ -382,8 +382,8 @@ export default function Devices() {
                   id="room"
                   label="Room Location"
                   placeholder="e.g. Master Bedroom"
-                  error={errorsAdd.room?.message}
-                  {...regAdd('room')}
+                  error={errorsAdd.roomId?.message}
+                  {...regAdd('roomId')}
                 />
                 <Input 
                   id="type"
@@ -396,12 +396,12 @@ export default function Devices() {
 
               <div className="grid grid-cols-2 gap-4">
                 <Input 
-                  id="ratedPower"
+                  id="powerDraw"
                   label="Rated Wattage (Watts)"
                   type="number"
                   placeholder="1500"
-                  error={errorsAdd.ratedPower?.message}
-                  {...regAdd('ratedPower')}
+                  error={errorsAdd.powerDraw?.message}
+                  {...regAdd('powerDraw')}
                 />
 
                  <div className="flex flex-col gap-1.5">
@@ -413,9 +413,9 @@ export default function Devices() {
                     className="w-full bg-white border-2 border-slate-900 rounded-lg p-2 text-xs font-bold text-slate-900 outline-none focus:shadow-[2px_2px_0px_0px_rgba(15,23,42,1)]"
                     {...regAdd('status')}
                   >
-                    <option value="off">Off</option>
-                    <option value="on">On</option>
-                    <option value="standby">Standby</option>
+                    <option value="offline">Off</option>
+                    <option value="online">On</option>
+                    <option value="offline">Standby</option>
                   </select>
                 </div>
               </div>
@@ -456,8 +456,8 @@ export default function Devices() {
                 <Input 
                   id="room-edit"
                   label="Room Location"
-                  error={errorsEdit.room?.message}
-                  {...regEdit('room')}
+                  error={errorsEdit.roomId?.message}
+                  {...regEdit('roomId')}
                 />
                 <Input 
                   id="type-edit"
@@ -469,11 +469,11 @@ export default function Devices() {
 
               <div className="grid grid-cols-2 gap-4">
                 <Input 
-                  id="ratedPower-edit"
+                  id="powerDraw-edit"
                   label="Rated Power (W)"
                   type="number"
-                  error={errorsEdit.ratedPower?.message}
-                  {...regEdit('ratedPower')}
+                  error={errorsEdit.powerDraw?.message}
+                  {...regEdit('powerDraw')}
                 />
 
                 <div className="flex flex-col gap-1.5">
@@ -485,9 +485,9 @@ export default function Devices() {
                     className="w-full bg-white border-2 border-slate-900 rounded-lg p-2 text-xs font-bold text-slate-900 outline-none focus:shadow-[2px_2px_0px_0px_rgba(15,23,42,1)]"
                     {...regEdit('status')}
                   >
-                    <option value="off">Off</option>
-                    <option value="on">On</option>
-                    <option value="standby">Standby</option>
+                    <option value="offline">Off</option>
+                    <option value="online">On</option>
+                    <option value="offline">Standby</option>
                   </select>
                 </div>
               </div>

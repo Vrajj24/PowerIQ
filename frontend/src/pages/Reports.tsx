@@ -1,5 +1,9 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../components/ui/Card';
+import { reportService } from '../services/reportService';
+import { analyticsService } from '../services/analyticsService';
+import { useDevices } from '../context/DeviceContext';
+import type { Device } from '../types';
 import { Button } from '../components/ui/Button';
 import { 
   FileText, 
@@ -22,35 +26,63 @@ type ReportType = 'daily' | 'weekly' | 'monthly' | 'yearly';
 
 export default function Reports() {
   const [reportType, setReportType] = useState<ReportType>('monthly');
+  const [isExporting, setIsExporting] = useState(false);
 
-  // Mock data for the current report view
+  const handleExportCsv = async () => {
+    try {
+      setIsExporting(true);
+      const days = reportType === 'daily' ? 1 : reportType === 'weekly' ? 7 : reportType === 'monthly' ? 30 : 365;
+      await reportService.downloadCsv(days);
+    } catch (error) {
+      console.error('Failed to export CSV', error);
+      alert('Failed to download report. Please try again.');
+    } finally {
+      setIsExporting(false);
+    }
+  };
+  const { summary, devices } = useDevices();
+  const [chartData, setChartData] = useState<any[]>([]);
+
+  useEffect(() => {
+    const fetchHistorical = async () => {
+      try {
+        const days = reportType === 'daily' ? 1 : reportType === 'weekly' ? 7 : reportType === 'monthly' ? 30 : 365;
+        const data = await analyticsService.getHistoricalData(days);
+        // Format for Recharts
+        const formatted = data.map(d => ({
+          name: new Date(d.timestamp).toLocaleDateString('en-US', { weekday: 'short' }),
+          usage: d.powerDraw
+        }));
+        setChartData(formatted);
+      } catch (e) {
+        console.error('Failed to fetch historical data for reports', e);
+      }
+    };
+    fetchHistorical();
+  }, [reportType]);
+
+  // Compute stats from backend data
+  const highestDevice = [...devices].sort((a, b) => b.powerDraw - a.powerDraw)[0]?.name || 'N/A';
+  const lowestDevice = [...devices].filter(d => d.powerDraw > 0).sort((a, b) => a.powerDraw - b.powerDraw)[0]?.name || 'N/A';
+  
   const reportData = {
-    totalEnergy: 980, // kWh
-    avgDaily: 31.6, // kWh
-    highestDevice: 'HVAC System',
-    lowestDevice: 'Smart Bulb',
-    estimatedBill: 7840, // INR
-    efficiencyScore: 88, // out of 100
-    peakHours: '6:00 PM - 9:00 PM',
+    totalEnergy: summary?.monthlyUsage || 0,
+    avgDaily: summary?.todayUsage || 0,
+    highestDevice,
+    lowestDevice,
+    estimatedBill: summary?.estimatedBill || 0,
+    efficiencyScore: summary?.efficiencyScore || 0,
+    peakHours: '6:00 PM - 9:00 PM', // Could be computed if backend returns it
   };
 
-  const chartData = [
-    { name: 'Mon', usage: 28 },
-    { name: 'Tue', usage: 30 },
-    { name: 'Wed', usage: 25 },
-    { name: 'Thu', usage: 32 },
-    { name: 'Fri', usage: 29 },
-    { name: 'Sat', usage: 42 },
-    { name: 'Sun', usage: 38 },
-  ];
-
-  const deviceWise = [
-    { name: 'HVAC System', room: 'Living Room', usage: '410 kWh', cost: '₹3280', percent: 41 },
-    { name: 'Water Heater', room: 'Basement', usage: '210 kWh', cost: '₹1680', percent: 21 },
-    { name: 'Refrigerator', room: 'Kitchen', usage: '120 kWh', cost: '₹960', percent: 12 },
-    { name: 'Washing Machine', room: 'Utility', usage: '90 kWh', cost: '₹720', percent: 9 },
-    { name: 'Others', room: 'Various', usage: '150 kWh', cost: '₹1200', percent: 17 },
-  ];
+  const totalPower = devices.reduce((acc: number, d: Device) => acc + d.powerDraw, 0);
+  const deviceWise = devices.map((d: Device) => ({
+    name: d.name,
+    room: d.roomId,
+    usage: `${Number(d.powerDraw).toFixed(1)} W`,
+    cost: `₹${((d.powerDraw / 1000) * 8 * 24).toFixed(0)}`, // Mock cost calculation based on powerDraw * rate * 24h
+    percent: totalPower > 0 ? Math.round((d.powerDraw / totalPower) * 100) : 0
+  })).sort((a: any, b: any) => b.percent - a.percent);
 
   const getEfficiencyColor = (score: number) => {
     if (score >= 90) return 'text-emerald-700 bg-emerald-100 border-emerald-900';
@@ -66,13 +98,19 @@ export default function Reports() {
           <p className="text-slate-600 text-xs font-medium mt-1">Generate, preview, and export comprehensive consumption analytics.</p>
         </div>
         <div className="flex flex-wrap gap-2">
-          <Button variant="outline" size="sm" className="flex items-center gap-1.5 text-xs">
+          <Button variant="outline" size="sm" className="flex items-center gap-1.5 text-xs" onClick={() => window.print()}>
             <Printer size={15} />
             <span className="hidden sm:inline">Print Report</span>
           </Button>
-          <Button variant="outline" size="sm" className="flex items-center gap-1.5 text-xs">
-            <FileSpreadsheet size={15} />
-            <span className="hidden sm:inline">Export CSV</span>
+          <Button 
+            variant="outline" 
+            size="sm" 
+            className="flex items-center gap-1.5 text-xs"
+            onClick={handleExportCsv}
+            disabled={isExporting}
+          >
+            {isExporting ? <span className="animate-spin text-lg">⏳</span> : <FileSpreadsheet size={15} />}
+            <span className="hidden sm:inline">{isExporting ? 'Exporting...' : 'Export CSV'}</span>
           </Button>
           <Button variant="primary" size="sm" className="flex items-center gap-1.5 text-xs">
             <Download size={15} />
@@ -157,7 +195,7 @@ export default function Reports() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-200">
-                    {deviceWise.map((dev, idx) => (
+                    {deviceWise.map((dev: any, idx: number) => (
                       <tr key={idx} className="hover:bg-slate-50 transition-colors">
                         <td className="px-6 py-3 font-semibold text-slate-900">
                           {dev.name}

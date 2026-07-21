@@ -5,3 +5,5 @@ export * from './alertService';
 export * from './dashboardService';
 export * from './analyticsService';
 export * from './settingsService';
+export * from './reportService';
+export * from './websocketService';

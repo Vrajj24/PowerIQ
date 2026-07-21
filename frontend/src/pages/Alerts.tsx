@@ -43,7 +43,7 @@ export default function Alerts() {
   const filteredAlerts = alerts.filter(alert => {
     const matchesCategory = filterCategory === 'all' || alert.category === filterCategory;
     const matchesStatus = filterStatus === 'all' || (filterStatus === 'read' ? alert.read : !alert.read);
-    const matchesSearch = alert.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
+    const matchesSearch = alert.message.toLowerCase().includes(searchQuery.toLowerCase()) || 
                           alert.message.toLowerCase().includes(searchQuery.toLowerCase());
     return matchesCategory && matchesStatus && matchesSearch;
   });
@@ -118,15 +118,15 @@ export default function Alerts() {
           filteredAlerts.map((alert) => (
             <div 
               key={alert.id}
-              className={`p-4 rounded-xl flex gap-4 transition-all duration-150 shadow-[2px_2px_0px_0px_rgba(15,23,42,1)] hover:translate-y-[-1px] hover:shadow-[3px_3px_0px_0px_rgba(15,23,42,1)] ${getAlertBorderColor(alert.severity, alert.read)}`}
+              className={`p-4 rounded-xl flex gap-4 transition-all duration-150 shadow-[2px_2px_0px_0px_rgba(15,23,42,1)] hover:translate-y-[-1px] hover:shadow-[3px_3px_0px_0px_rgba(15,23,42,1)] ${getAlertBorderColor(alert.severity as any, alert.read)}`}
             >
               <div className="shrink-0 mt-0.5">
-                {getAlertIcon(alert.severity)}
+                {getAlertIcon(alert.severity as any)}
               </div>
               <div className="flex-1 space-y-1 text-left">
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1">
                   <h3 className="text-sm font-bold text-slate-900 font-serif flex items-center gap-2">
-                    {alert.title}
+                    {alert.message}
                     {!alert.read && (
                       <span className="bg-rose-50 text-rose-900 border-2 border-rose-900 text-[8px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-md">
                         New

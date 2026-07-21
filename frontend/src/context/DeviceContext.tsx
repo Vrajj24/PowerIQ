@@ -1,13 +1,14 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import type { Device, Alert, UsageSummary, DeviceStatus } from '../types';
-import { deviceService, alertService, dashboardService } from '../services';
+import type { Device, Alert, UsageSummary } from '../types';
+import { deviceService, alertService, dashboardService, websocketService } from '../services';
 
 interface DeviceContextType {
   devices: Device[];
   alerts: Alert[];
   summary: UsageSummary | null;
+  error: string | null;
   toggleDeviceStatus: (id: string) => void;
-  addDevice: (device: Omit<Device, 'id' | 'currentConsumption' | 'lastUpdated'>) => void;
+  addDevice: (device: Omit<Device, 'id'>) => void;
   updateDevice: (id: string, updatedFields: Partial<Device>) => void;
   deleteDevice: (id: string) => void;
   markAlertRead: (id: string) => void;
@@ -20,114 +21,105 @@ export const DeviceProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   const [devices, setDevices] = useState<Device[]>([]);
   const [alerts, setAlerts] = useState<Alert[]>([]);
   const [summary, setSummary] = useState<UsageSummary | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   // Load initial data
   useEffect(() => {
     const loadData = async () => {
-      const [devs, alts, summ] = await Promise.all([
-        deviceService.getDevices(),
-        alertService.getAlerts(),
-        dashboardService.getSummary()
-      ]);
-      setDevices(devs);
-      setAlerts(alts);
-      setSummary(summ);
+      try {
+        const [devs, alts, summ] = await Promise.all([
+          deviceService.getDevices(),
+          alertService.getAlerts(),
+          dashboardService.getSummary()
+        ]);
+        setDevices(devs);
+        setAlerts(alts as any);
+        setSummary(summ as any);
+      } catch (err: any) {
+        console.error("Failed to load backend data", err);
+        setError(err.message || String(err));
+      }
     };
     loadData();
+
+    // Connect to WebSockets
+    websocketService.connect();
+    
+    websocketService.onTelemetry((data: any) => {
+      setSummary({
+        currentPower: data.currentPower,
+        dailyUsage: data.dailyUsage,
+        monthlyUsage: data.monthlyUsage,
+        estimatedBill: data.estimatedBill,
+        activeDevices: data.activeDevices,
+        totalDevices: devices.length, // Include totalDevices
+        efficiencyScore: 85 // Mock or calculate based on data
+      });
+      // Optionally reload devices to get fresh powerDraw values
+      deviceService.getDevices().then(setDevices);
+    });
+
+    websocketService.onAlert((alert: any) => {
+      setAlerts(prev => [alert, ...prev]);
+    });
+
+    return () => {
+      websocketService.disconnect();
+    };
   }, []);
 
-  // Sync state to services when they change
-  useEffect(() => {
-    if (devices.length > 0) {
-      deviceService.updateDevices(devices);
-    }
-  }, [devices]);
-
-  useEffect(() => {
-    if (alerts.length > 0) {
-      alertService.updateAlerts(alerts);
-    }
-  }, [alerts]);
-
-  // Recalculate summary metrics whenever devices change
-  useEffect(() => {
-    if (devices.length === 0 || !summary) return;
-
-    const activeCount = devices.filter(d => d.status === 'on').length;
+  const toggleDeviceStatus = async (id: string) => {
+    const device = devices.find(d => d.id === id);
+    if (!device) return;
+    const newStatus = device.status === 'online' ? 'offline' : 'online';
     
-    // Sum active wattages
-    const totalWatts = devices.reduce((sum, d) => sum + d.currentConsumption, 0);
-    const totalKw = parseFloat((totalWatts / 1000).toFixed(2));
-
-    // Dynamic calculations based on base mock data
-    const baselineDailyKwh = 20.0;
-    const activeConsumptionContribution = totalKw * 1.5; // weight
-    const todayKwh = parseFloat((baselineDailyKwh + activeConsumptionContribution).toFixed(1));
-    
-    const monthlyKwh = Math.round(920 + todayKwh * 2.2);
-    const estimatedBill = parseFloat((monthlyKwh * 8.00).toFixed(2)); // ₹8.00 per kWh flat rate
-
-    // Efficiency calculation
-    const totalRated = devices.reduce((sum, d) => sum + d.ratedPower, 0);
-    const loadFactor = totalRated > 0 ? (totalWatts / totalRated) : 0;
-    const efficiency = Math.max(65, Math.min(98, Math.round(95 - (loadFactor * 20))));
-
-    setSummary({
-      ...summary,
-      currentPower: totalKw,
-      todayUsage: todayKwh,
-      monthlyUsage: monthlyKwh,
-      estimatedBill: estimatedBill,
-      activeDevices: activeCount,
-      efficiencyScore: efficiency,
-    });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [devices]);
-
-  const toggleDeviceStatus = (id: string) => {
-    setDevices(prev => prev.map(device => {
-      if (device.id === id) {
-        const newStatus: DeviceStatus = device.status === 'on' ? 'off' : 'on';
-        return {
-          ...device,
-          status: newStatus,
-          currentConsumption: newStatus === 'on' ? device.ratedPower * (0.8 + Math.random() * 0.2) : 0,
-          lastUpdated: new Date().toISOString(),
-        };
-      }
-      return device;
-    }));
-    deviceService.toggleDeviceStatus(id, 'on'); // Simulate API call to backend
-  };
-
-  const addDevice = (deviceData: Omit<Device, 'id' | 'currentConsumption' | 'lastUpdated'>) => {
-    const newDevice: Device = {
-      ...deviceData,
-      id: `dev_${Date.now()}`,
-      currentConsumption: deviceData.status === 'on' ? deviceData.ratedPower : 0,
-      lastUpdated: new Date().toISOString(),
-    };
-    setDevices(prev => [...prev, newDevice]);
-  };
-
-  const updateDevice = (id: string, updatedFields: Partial<Device>) => {
-    setDevices(prev => prev.map(device => 
-      device.id === id ? { ...device, ...updatedFields, lastUpdated: new Date().toISOString() } : device
+    // Optimistic UI update
+    setDevices(prev => prev.map(d => 
+      d.id === id ? { ...d, status: newStatus } : d
     ));
+
+    const success = await deviceService.toggleDeviceStatus(id, newStatus === 'online' ? 'online' : 'offline');
+    if (!success) {
+      // Revert if failed
+      setDevices(prev => prev.map(d => 
+        d.id === id ? { ...d, status: device.status } : d
+      ));
+    }
   };
 
-  const deleteDevice = (id: string) => {
-    setDevices(prev => prev.filter(device => device.id !== id));
+  const addDevice = async (device: Omit<Device, 'id'>) => {
+    // Generate a temporary ID so it renders immediately
+    const tempId = `new_${Date.now()}`;
+    const newDevice = { ...device, id: tempId } as Device;
+    setDevices(prev => [...prev, newDevice]);
+
+    // Send to backend
+    const updated = await deviceService.updateDevices([newDevice]);
+    setDevices(prev => prev.map(d => d.id === tempId ? updated[0] : d));
+  };
+
+  const updateDevice = async (id: string, updatedFields: Partial<Device>) => {
+    const original = devices.find(d => d.id === id);
+    if (!original) return;
+    
+    const updatedDevice = { ...original, ...updatedFields };
+    setDevices(prev => prev.map(d => d.id === id ? updatedDevice : d));
+    
+    await deviceService.updateDevices([updatedDevice]);
+  };
+
+  const deleteDevice = async (id: string) => {
+    setDevices(prev => prev.filter(d => d.id !== id));
+    // Implementation needed in deviceService for delete if you want it to persist deletion
   };
 
   const markAlertRead = (id: string) => {
-    setAlerts(prev => prev.map(alert => 
-      alert.id === id ? { ...alert, read: true } : alert
-    ));
+    setAlerts(prev => prev.map(a => a.id === id ? { ...a, read: true } : a));
+    alertService.markAsRead(id);
   };
 
   const markAllAlertsRead = () => {
-    setAlerts(prev => prev.map(alert => ({ ...alert, read: true })));
+    setAlerts(prev => prev.map(a => ({ ...a, read: true })));
   };
 
   return (
@@ -135,6 +127,7 @@ export const DeviceProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       devices,
       alerts,
       summary,
+      error,
       toggleDeviceStatus,
       addDevice,
       updateDevice,

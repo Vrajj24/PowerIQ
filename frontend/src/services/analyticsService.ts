@@ -1,16 +1,14 @@
-import { ROOM_DISTRIBUTION, MONTHLY_USAGE, PEAK_HOURS_DATA } from '../mock';
-import { simulateDelay } from './api';
+import type { AnalyticsData } from '../types';
+import api from './api';
 
 export const analyticsService = {
-  getRoomDistribution: async (): Promise<any[]> => {
-    return simulateDelay(ROOM_DISTRIBUTION);
-  },
-
-  getMonthlyUsage: async (): Promise<any[]> => {
-    return simulateDelay(MONTHLY_USAGE);
-  },
-
-  getPeakHours: async (): Promise<any[]> => {
-    return simulateDelay(PEAK_HOURS_DATA);
+  getHistoricalData: async (days: number = 7): Promise<AnalyticsData[]> => {
+    const response = await api.get(`/analytics/historical?days=${days}`);
+    
+    return response.data.map((item: any) => ({
+      timestamp: item.timestamp, // Ensure the backend sends ISO format
+      powerDraw: item.powerDraw,
+      activeDevices: item.activeDevices
+    }));
   }
 };
