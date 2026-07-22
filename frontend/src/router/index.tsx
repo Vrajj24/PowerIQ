@@ -2,6 +2,7 @@ import React from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import ProtectedRoute from './ProtectedRoute';
 import DashboardLayout from '../layouts/DashboardLayout';
+import { DeviceProvider } from '../context/DeviceContext';
 
 // Lazy load pages for a highly scalable, enterprise-grade architecture
 const Login = React.lazy(() => import('../pages/Login'));
@@ -38,17 +39,19 @@ export default function AppRouter() {
             path="/*"
             element={
               <DashboardLayout>
-                <Routes>
-                  <Route path="dashboard" element={<Dashboard />} />
-                  <Route path="devices" element={<Devices />} />
-                  <Route path="analytics" element={<Analytics />} />
-                  <Route path="reports" element={<Reports />} />
-                  <Route path="alerts" element={<Alerts />} />
-                  <Route path="profile" element={<Profile />} />
-                  <Route path="settings" element={<Settings />} />
-                  <Route path="" element={<Navigate to="dashboard" replace />} />
-                  <Route path="*" element={<Navigate to="dashboard" replace />} />
-                </Routes>
+                <DeviceProvider>
+                  <Routes>
+                    <Route path="dashboard" element={<Dashboard />} />
+                    <Route path="devices" element={<Devices />} />
+                    <Route path="analytics" element={<Analytics />} />
+                    <Route path="reports" element={<Reports />} />
+                    <Route path="alerts" element={<Alerts />} />
+                    <Route path="profile" element={<Profile />} />
+                    <Route path="settings" element={<Settings />} />
+                    <Route path="" element={<Navigate to="dashboard" replace />} />
+                    <Route path="*" element={<Navigate to="dashboard" replace />} />
+                  </Routes>
+                </DeviceProvider>
               </DashboardLayout>
             }
           />
