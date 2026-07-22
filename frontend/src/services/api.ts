@@ -1,8 +1,11 @@
 import axios from 'axios';
 
+// Use environment variable if provided, otherwise default to the Render production URL
+const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'https://poweriq.onrender.com';
+
 // Create an Axios instance
 const api = axios.create({
-  baseURL: 'http://localhost:8080/api',
+  baseURL: `${BACKEND_URL}/api`,
   headers: {
     'Content-Type': 'application/json',
   },

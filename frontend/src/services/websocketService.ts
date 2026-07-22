@@ -12,8 +12,10 @@ class WebSocketService {
       return;
     }
 
+    const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'https://poweriq.onrender.com';
+
     this.client = new Client({
-      webSocketFactory: () => new SockJS('http://localhost:8080/ws'),
+      webSocketFactory: () => new SockJS(`${BACKEND_URL}/ws`),
       reconnectDelay: 5000,
       onConnect: () => {
         console.log('Connected to WebSockets');
