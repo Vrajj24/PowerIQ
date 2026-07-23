@@ -4,8 +4,9 @@ import api from './api';
 export const deviceService = {
   getDevices: async (): Promise<Device[]> => {
     const response = await api.get('/devices');
+    const data = response.data.value || response.data;
     // Map DTOs to internal Device type
-    return response.data.map((dto: any) => ({
+    return data.map((dto: any) => ({
       id: dto.id.toString(),
       name: dto.name,
       type: dto.type,

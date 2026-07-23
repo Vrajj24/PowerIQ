@@ -4,7 +4,8 @@ import api from './api';
 export const alertService = {
   getAlerts: async (): Promise<Alert[]> => {
     const response = await api.get('/alerts');
-    return response.data.map((item: any) => ({
+    const data = response.data.value || response.data;
+    return data.map((item: any) => ({
       id: item.id.toString(),
       type: item.type.toLowerCase() === 'critical' ? 'critical' : item.type.toLowerCase() === 'warning' ? 'warning' : 'info',
       message: item.message,
