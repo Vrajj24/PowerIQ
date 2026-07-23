@@ -47,12 +47,12 @@ export const DeviceProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     
     websocketService.onTelemetry((data: any) => {
       setSummary({
-        currentPower: data.currentPower,
-        dailyUsage: data.dailyUsage,
-        monthlyUsage: data.monthlyUsage,
+        currentPower: data.currentPowerDraw,
+        dailyUsage: data.dailyUsageKwh,
+        monthlyUsage: data.monthlyUsageKwh,
         estimatedBill: data.estimatedBill,
         activeDevices: data.activeDevices,
-        totalDevices: devices.length, // Include totalDevices
+        totalDevices: data.totalDevices, // Include totalDevices from backend
         efficiencyScore: 85 // Mock or calculate based on data
       });
       // Optionally reload devices to get fresh powerDraw values
