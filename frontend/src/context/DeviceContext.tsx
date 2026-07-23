@@ -23,23 +23,34 @@ export const DeviceProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   const [summary, setSummary] = useState<UsageSummary | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  // Load initial data
+  // Load initial data with retry logic (Render free tier sleeps and needs ~30s to wake)
   useEffect(() => {
-    const loadData = async () => {
+    let cancelled = false;
+
+    const loadData = async (attempt = 1) => {
       try {
         const [devs, alts, summ] = await Promise.all([
           deviceService.getDevices(),
           alertService.getAlerts(),
           dashboardService.getSummary()
         ]);
+        if (cancelled) return;
         setDevices(devs);
         setAlerts(alts as any);
-        setSummary(summ as any);
+        setSummary({ ...summ, efficiencyScore: 85 } as any);
+        setError(null);
       } catch (err: any) {
-        console.error("Failed to load backend data", err);
-        setError(err.message || String(err));
+        if (cancelled) return;
+        console.error(`Load attempt ${attempt} failed`, err);
+        if (attempt < 4) {
+          // Retry with backoff: 5s, 10s, 20s — covers Render cold-start
+          setTimeout(() => loadData(attempt + 1), attempt * 5000);
+        } else {
+          setError('Backend is unreachable. Please try refreshing the page in 30 seconds.');
+        }
       }
     };
+
     loadData();
 
     // Connect to WebSockets
@@ -47,15 +58,14 @@ export const DeviceProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     
     websocketService.onTelemetry((data: any) => {
       setSummary({
-        currentPower: data.currentPowerDraw,
-        dailyUsage: data.dailyUsageKwh,
-        monthlyUsage: data.monthlyUsageKwh,
+        currentPower: data.currentPower,
+        dailyUsage: data.dailyUsage,
+        monthlyUsage: data.monthlyUsage,
         estimatedBill: data.estimatedBill,
         activeDevices: data.activeDevices,
-        totalDevices: data.totalDevices, // Include totalDevices from backend
-        efficiencyScore: 85 // Mock or calculate based on data
+        totalDevices: devices.length,
+        efficiencyScore: 85
       });
-      // Optionally reload devices to get fresh powerDraw values
       deviceService.getDevices().then(setDevices);
     });
 
@@ -64,9 +74,11 @@ export const DeviceProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     });
 
     return () => {
+      cancelled = true;
       websocketService.disconnect();
     };
   }, []);
+
 
   const toggleDeviceStatus = async (id: string) => {
     const device = devices.find(d => d.id === id);

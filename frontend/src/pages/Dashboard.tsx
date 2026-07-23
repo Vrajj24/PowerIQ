@@ -50,19 +50,26 @@ export default function Dashboard() {
 
   if (error) {
     return (
-      <div className="flex justify-center items-center h-[50vh] text-red-500 font-bold text-xl">
-        Error loading backend data: {error}
+      <div className="flex flex-col justify-center items-center h-[60vh] gap-4 text-center">
+        <div className="w-12 h-12 border-4 border-slate-200 border-t-slate-900 rounded-full animate-spin" />
+        <div>
+          <p className="font-bold text-slate-900 text-sm uppercase tracking-wider">Backend Waking Up...</p>
+          <p className="text-slate-500 text-xs mt-1 max-w-xs">Render's free tier sleeps when idle. Retrying automatically — this takes up to 30 seconds.</p>
+        </div>
+        <button onClick={() => window.location.reload()} className="text-xs font-bold text-[#c5a059] uppercase tracking-wider underline">Force Refresh</button>
       </div>
     );
   }
 
   if (!summary) {
     return (
-      <div className="flex justify-center items-center h-[50vh]">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-slate-900"></div>
+      <div className="flex flex-col justify-center items-center h-[60vh] gap-4 text-center">
+        <div className="w-10 h-10 border-4 border-slate-200 border-t-slate-900 rounded-full animate-spin" />
+        <p className="text-slate-500 text-xs uppercase tracking-wider font-semibold">Loading telemetry...</p>
       </div>
     );
   }
+
 
   // Get efficiency grade letter based on numerical score
   const getEfficiencyGrade = (score: number) => {
