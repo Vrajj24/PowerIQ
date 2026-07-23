@@ -1,0 +1,4 @@
+import{g as e,u as t}from"./index-BCVkSapz.js";e();var n=t(),r=({children:e,className:t=``,hoverEffect:r=!1,...i})=>(0,n.jsx)(`div`,{className:`editorial-card rounded-xl p-5 overflow-hidden
+        ${r?`editorial-card-hover`:``}
+        ${t}
+      `,...i,children:e}),i=({children:e,className:t=``,...r})=>(0,n.jsx)(`div`,{className:`flex flex-col space-y-1.5 pb-3 border-b-2 border-slate-900 mb-4 ${t}`,...r,children:e}),a=({children:e,className:t=``,...r})=>(0,n.jsx)(`h3`,{className:`text-sm font-bold tracking-wider text-slate-900 uppercase font-sans ${t}`,...r,children:e}),o=({children:e,className:t=``,...r})=>(0,n.jsx)(`p`,{className:`text-[11px] text-slate-500 font-medium ${t}`,...r,children:e}),s=({children:e,className:t=``,...r})=>(0,n.jsx)(`div`,{className:`${t}`,...r,children:e});export{a,i,s as n,o as r,r as t};
