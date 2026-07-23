@@ -32,7 +32,11 @@ public class SecurityConfig {
             .cors(c -> c.configurationSource(corsConfigurationSource()))
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
+                // Public API endpoints
                 .requestMatchers("/api/auth/**", "/api/health").permitAll()
+                // Allow all static frontend assets (React SPA)
+                .requestMatchers("/", "/index.html", "/favicon.svg", "/icons.svg", "/assets/**").permitAll()
+                // All other API endpoints require authentication
                 .anyRequest().authenticated()
             );
 
