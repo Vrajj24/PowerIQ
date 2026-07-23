@@ -38,8 +38,8 @@ export default function AppRouter() {
           <Route
             path="/*"
             element={
-              <DashboardLayout>
-                <DeviceProvider>
+              <DeviceProvider>
+                <DashboardLayout>
                   <Routes>
                     <Route path="dashboard" element={<Dashboard />} />
                     <Route path="devices" element={<Devices />} />
@@ -51,11 +51,12 @@ export default function AppRouter() {
                     <Route path="" element={<Navigate to="dashboard" replace />} />
                     <Route path="*" element={<Navigate to="dashboard" replace />} />
                   </Routes>
-                </DeviceProvider>
-              </DashboardLayout>
+                </DashboardLayout>
+              </DeviceProvider>
             }
           />
         </Route>
+
 
         {/* Fallbacks */}
         <Route path="/" element={<Navigate to="/dashboard" replace />} />
