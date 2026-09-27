@@ -5,6 +5,7 @@ import DashboardLayout from '../layouts/DashboardLayout';
 import { DeviceProvider } from '../context/DeviceContext';
 
 // Lazy load pages for a highly scalable, enterprise-grade architecture
+const Landing = React.lazy(() => import('../pages/Landing'));
 const Login = React.lazy(() => import('../pages/Login'));
 const Register = React.lazy(() => import('../pages/Register'));
 const Dashboard = React.lazy(() => import('../pages/Dashboard'));
@@ -30,6 +31,7 @@ export default function AppRouter() {
     <React.Suspense fallback={<Loader />}>
       <Routes>
         {/* Public Routes */}
+        <Route path="/" element={<Landing />} />
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
 
@@ -59,8 +61,7 @@ export default function AppRouter() {
 
 
         {/* Fallbacks */}
-        <Route path="/" element={<Navigate to="/dashboard" replace />} />
-        <Route path="*" element={<Navigate to="/dashboard" replace />} />
+        <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </React.Suspense>
   );

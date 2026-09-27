@@ -11,13 +11,41 @@ import {
   Trash2, 
   X, 
   AlertTriangle,
-  Cpu
+  Cpu,
+  Zap
 } from 'lucide-react';
 import { useDevices } from '../context/DeviceContext';
 import type { Device, DeviceStatus } from '../types';
 import { Card } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
+
+// Device type → { label, typical wattage, emoji }
+const DEVICE_PRESETS: Record<string, { label: string; watts: number; emoji: string }> = {
+  'HVAC':          { label: 'HVAC / Air Conditioner', watts: 2000, emoji: '❄️' },
+  'Heating':       { label: 'Heater / Heat Pump',     watts: 1500, emoji: '🔥' },
+  'Appliance':     { label: 'Appliance (General)',    watts: 800,  emoji: '🍽️' },
+  'Refrigerator':  { label: 'Refrigerator / Fridge',  watts: 150,  emoji: '🧊' },
+  'WashingMachine':{ label: 'Washing Machine',        watts: 2200, emoji: '👕' },
+  'Dishwasher':    { label: 'Dishwasher',             watts: 1800, emoji: '🫧' },
+  'Microwave':     { label: 'Microwave Oven',         watts: 1100, emoji: '📡' },
+  'Oven':          { label: 'Oven / Stove',           watts: 2400, emoji: '🍳' },
+  'Entertainment': { label: 'TV / Entertainment',     watts: 150,  emoji: '📺' },
+  'Lighting':      { label: 'Lighting (LED)',         watts: 15,   emoji: '💡' },
+  'Lighting_CFL':  { label: 'Lighting (CFL/Tube)',    watts: 40,   emoji: '🔆' },
+  'Climate':       { label: 'Fan / Ceiling Fan',      watts: 75,   emoji: '🌀' },
+  'WaterHeater':   { label: 'Water Heater / Geyser',  watts: 2000, emoji: '🚿' },
+  'EV_Charger':    { label: 'EV Charger',             watts: 7200, emoji: '⚡' },
+  'Computer':      { label: 'Desktop / Gaming PC',   watts: 400,  emoji: '💻' },
+  'Router':        { label: 'Router / Modem',         watts: 20,   emoji: '📶' },
+  'Utility':       { label: 'Utility (Other)',        watts: 500,  emoji: '🔌' },
+};
+
+const ROOMS = [
+  'Living Room', 'Master Bedroom', 'Bedroom 2', 'Bedroom 3',
+  'Kitchen', 'Bathroom', 'Laundry Room', 'Garage', 'Office', 'Basement', 'Outdoor',
+];
+
 
 // Zod schema for Add/Edit Device forms
 const deviceSchema = z.object({
@@ -42,21 +70,36 @@ export default function Devices() {
   const [selectedStatus, setSelectedStatus] = useState('all');
   const [sortBy, setSortBy] = useState<'name' | 'power' | 'consumption'>('name');
 
+  // Add form: selected type key for auto-fill
+  const [selectedTypeKey, setSelectedTypeKey] = useState('HVAC');
+
   // Modals state
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [editingDevice, setEditingDevice] = useState<Device | null>(null);
   const [deletingDeviceId, setDeletingDeviceId] = useState<string | null>(null);
+
 
   // Form setups (cast resolver to any to fix TS conflict with coercion schema)
   const {
     register: regAdd,
     handleSubmit: handleAddSubmit,
     reset: resetAdd,
+    setValue: setAddValue,
     formState: { errors: errorsAdd }
   } = useForm<DeviceFormValues>({
     resolver: zodResolver(deviceSchema) as any,
-    defaultValues: { name: '', roomId: 'living-room', type: 'Appliance', powerDraw: 0, status: 'offline' }
+    defaultValues: { name: '', roomId: 'Living Room', type: 'HVAC', powerDraw: 2000, status: 'offline' }
   });
+
+  // When device type changes, auto-fill name suggestion and rated wattage
+  const handleTypeChange = (typeKey: string) => {
+    setSelectedTypeKey(typeKey);
+    const preset = DEVICE_PRESETS[typeKey];
+    if (preset) {
+      setAddValue('type', typeKey);
+      setAddValue('powerDraw', preset.watts);
+    }
+  };
 
   const {
     register: regEdit,
@@ -71,7 +114,8 @@ export default function Devices() {
   const onAddDeviceSubmit = (data: DeviceFormValues) => {
     addDevice(data);
     setIsAddOpen(false);
-    resetAdd();
+    resetAdd({ name: '', roomId: 'Living Room', type: 'HVAC', powerDraw: 2000, status: 'offline' });
+    setSelectedTypeKey('HVAC');
   };
 
   // Trigger Edit modal and preload data
@@ -360,64 +404,98 @@ export default function Devices() {
       {/* --- ADD MODAL --- */}
       {isAddOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#1a2a3a]/40 backdrop-blur-sm px-4">
-          <div className="w-full max-w-md bg-white border-2 border-slate-900 rounded-2xl p-6 shadow-[4px_4px_0px_0px_rgba(15,23,42,1)] space-y-4 animate-in fade-in zoom-in-95 duration-150">
+          <div className="w-full max-w-lg bg-white border-2 border-slate-900 rounded-2xl p-6 shadow-[4px_4px_0px_0px_rgba(15,23,42,1)] space-y-5 animate-in fade-in zoom-in-95 duration-150">
             <div className="flex justify-between items-center border-b-2 border-slate-900 pb-3">
-              <h3 className="text-base font-bold font-serif text-slate-900 uppercase tracking-wide">Register Appliance</h3>
+              <div>
+                <h3 className="text-base font-bold font-serif text-slate-900 uppercase tracking-wide">Register Appliance</h3>
+                <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider mt-0.5">Select a type to auto-fill rated wattage</p>
+              </div>
               <button onClick={() => setIsAddOpen(false)} className="text-slate-400 hover:text-slate-900">
                 <X size={16} />
               </button>
             </div>
 
             <form onSubmit={handleAddSubmit(onAddDeviceSubmit as any)} className="space-y-4 text-left">
+
+              {/* Device Type Picker Grid */}
+              <div>
+                <label className="text-[10px] font-bold text-slate-800 uppercase tracking-wider block mb-2">Device Type</label>
+                <div className="grid grid-cols-3 sm:grid-cols-4 gap-2 max-h-48 overflow-y-auto pr-1">
+                  {Object.entries(DEVICE_PRESETS).map(([key, preset]) => (
+                    <button
+                      key={key}
+                      type="button"
+                      onClick={() => handleTypeChange(key)}
+                      className={`flex flex-col items-center gap-1 p-2.5 rounded-xl border-2 text-center transition-all duration-100 active:translate-y-[1px] ${
+                        selectedTypeKey === key
+                          ? 'bg-[#1a2a3a] border-slate-900 text-white shadow-[2px_2px_0px_0px_rgba(15,23,42,1)]'
+                          : 'bg-white border-slate-200 text-slate-600 hover:border-slate-900 hover:bg-slate-50'
+                      }`}
+                    >
+                      <span className="text-lg leading-none">{preset.emoji}</span>
+                      <span className="text-[8px] font-bold uppercase tracking-wide leading-tight line-clamp-2">
+                        {preset.label.split('/')[0].split('(')[0].trim()}
+                      </span>
+                      <span className={`text-[8px] font-mono font-bold ${selectedTypeKey === key ? 'text-[#c5a059]' : 'text-slate-400'}`}>
+                        ~{preset.watts}W
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Auto-fill notice */}
+              {DEVICE_PRESETS[selectedTypeKey] && (
+                <div className="flex items-center gap-2 bg-emerald-50 border-2 border-emerald-900 rounded-lg px-3 py-2">
+                  <Zap size={12} className="text-emerald-800 shrink-0" />
+                  <p className="text-[10px] font-bold text-emerald-900 uppercase tracking-wide">
+                    Auto-filled: {DEVICE_PRESETS[selectedTypeKey].label} · ~{DEVICE_PRESETS[selectedTypeKey].watts}W rated
+                  </p>
+                </div>
+              )}
+
               <Input 
                 id="name"
                 label="Device Name"
-                placeholder="e.g. Master Bedroom AC"
+                placeholder={`e.g. Living Room ${DEVICE_PRESETS[selectedTypeKey]?.label.split('/')[0].trim() || 'Device'}`}
                 error={errorsAdd.name?.message}
                 {...regAdd('name')}
               />
 
               <div className="grid grid-cols-2 gap-4">
-                <Input 
-                  id="room"
-                  label="Room Location"
-                  placeholder="e.g. Master Bedroom"
-                  error={errorsAdd.roomId?.message}
-                  {...regAdd('roomId')}
-                />
-                <Input 
-                  id="type"
-                  label="Device Type"
-                  placeholder="e.g. HVAC"
-                  error={errorsAdd.type?.message}
-                  {...regAdd('type')}
-                />
-              </div>
+                {/* Room Dropdown */}
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-[10px] font-bold text-slate-800 uppercase tracking-wider">Room Location</label>
+                  <select
+                    className="w-full bg-white border-2 border-slate-900 rounded-lg p-2 text-xs font-bold text-slate-900 outline-none focus:shadow-[2px_2px_0px_0px_rgba(15,23,42,1)]"
+                    {...regAdd('roomId')}
+                  >
+                    {ROOMS.map(r => <option key={r} value={r}>{r}</option>)}
+                  </select>
+                  {errorsAdd.roomId && <p className="text-[10px] text-rose-600 font-bold">{errorsAdd.roomId.message}</p>}
+                </div>
 
-              <div className="grid grid-cols-2 gap-4">
                 <Input 
                   id="powerDraw"
-                  label="Rated Wattage (Watts)"
+                  label="Rated Wattage (W)"
                   type="number"
-                  placeholder="1500"
                   error={errorsAdd.powerDraw?.message}
                   {...regAdd('powerDraw')}
                 />
+              </div>
 
-                 <div className="flex flex-col gap-1.5">
-                  <label htmlFor="status" className="text-[10px] font-bold text-slate-800 uppercase tracking-wider">
-                    Initial Status
-                  </label>
-                  <select 
-                    id="status"
-                    className="w-full bg-white border-2 border-slate-900 rounded-lg p-2 text-xs font-bold text-slate-900 outline-none focus:shadow-[2px_2px_0px_0px_rgba(15,23,42,1)]"
-                    {...regAdd('status')}
-                  >
-                    <option value="offline">Off</option>
-                    <option value="online">On</option>
-                    <option value="offline">Standby</option>
-                  </select>
-                </div>
+              <div className="flex flex-col gap-1.5">
+                <label htmlFor="status" className="text-[10px] font-bold text-slate-800 uppercase tracking-wider">
+                  Initial Status
+                </label>
+                <select 
+                  id="status"
+                  className="w-full bg-white border-2 border-slate-900 rounded-lg p-2 text-xs font-bold text-slate-900 outline-none focus:shadow-[2px_2px_0px_0px_rgba(15,23,42,1)]"
+                  {...regAdd('status')}
+                >
+                  <option value="offline">Off / Standby</option>
+                  <option value="online">On / Active</option>
+                </select>
               </div>
 
               <div className="pt-3 border-t-2 border-slate-900 flex justify-end gap-2.5">
