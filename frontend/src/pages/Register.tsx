@@ -49,7 +49,7 @@ export default function Register() {
       if (success) {
         navigate('/dashboard');
       } else {
-        setErrorMsg('Registration failed. Please make sure data is valid.');
+        setErrorMsg('Registration failed. Please verify your details.');
       }
     } catch (err) {
       setErrorMsg('An unexpected error occurred. Please try again.');
@@ -59,23 +59,23 @@ export default function Register() {
   };
 
   return (
-    <div className="relative min-h-screen flex items-center justify-center bg-[#f4f1ea] overflow-hidden px-4 font-sans text-slate-900">
-      <div className="w-full max-w-md z-10">
+    <div className="relative min-h-screen flex items-center justify-center bg-[#090d14] px-4 font-sans text-slate-100">
+      <div className="w-full max-w-sm z-10 space-y-6">
         
-        {/* Logo and Brand Title */}
-        <div className="flex flex-col items-center justify-center text-center mb-6">
-          <img src={poweriqLogo} alt="PowerIQ" className="h-24 w-auto object-contain mb-1 mix-blend-darken" />
-          <p className="text-slate-600 text-xs font-semibold mt-1.5 max-w-xs leading-relaxed uppercase tracking-wider">
-            Create an Analyst Account
+        {/* Logo */}
+        <div className="flex flex-col items-center text-center">
+          <img src={poweriqLogo} alt="PowerIQ" className="h-10 w-auto object-contain mb-2 brightness-110" />
+          <p className="text-slate-400 text-xs">
+            Create a PowerIQ Telemetry Account
           </p>
         </div>
 
         {/* Register Panel */}
-        <div className="bg-white border-2 border-slate-900 rounded-2xl p-8 shadow-[4px_4px_0px_0px_rgba(15,23,42,1)] relative">
-          <h2 className="text-sm font-bold uppercase tracking-wider text-slate-500 mb-6 text-left">Create Account</h2>
+        <div className="bg-[#121824] border border-[#1e293b] rounded-xl p-6 space-y-5 shadow-xl">
+          <h2 className="text-sm font-semibold text-slate-200">Register Account</h2>
 
           {errorMsg && (
-            <div className="mb-5 p-3 rounded-lg bg-rose-50 border-2 border-rose-900 text-rose-900 text-xs flex items-start gap-2.5 font-bold uppercase tracking-wide">
+            <div className="p-3 rounded-lg bg-rose-950/40 border border-rose-900/60 text-rose-300 text-xs flex items-start gap-2">
               <AlertTriangle size={15} className="shrink-0 mt-0.5" />
               <span>{errorMsg}</span>
             </div>
@@ -96,7 +96,7 @@ export default function Register() {
               id="email"
               label="Email Address"
               type="email"
-              placeholder="e.g. john@poweriq.com"
+              placeholder="name@domain.com"
               leftIcon={<Mail size={15} />}
               error={errors.email?.message}
               {...register('email')}
@@ -125,19 +125,18 @@ export default function Register() {
             <Button
               type="submit"
               variant="primary"
-              className="w-full py-2.5 mt-4"
+              className="w-full py-2.5 mt-2"
               isLoading={isSubmitting}
             >
-              Register & Login
+              Create Account
             </Button>
           </form>
         </div>
 
-        {/* Footer actions */}
-        <p className="text-center text-[10px] font-bold uppercase tracking-wider text-slate-500 mt-6">
+        <p className="text-center text-xs text-slate-400">
           Already have an account?{' '}
-          <Link to="/login" className="text-[#c5a059] hover:underline hover:text-[#b08c45] transition-colors">
-            Login here
+          <Link to="/login" className="text-slate-200 hover:underline font-medium">
+            Sign In
           </Link>
         </p>
 

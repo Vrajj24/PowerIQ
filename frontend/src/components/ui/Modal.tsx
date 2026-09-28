@@ -1,7 +1,6 @@
 import React, { useEffect } from 'react';
 import { X } from 'lucide-react';
 
-
 interface ModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -31,28 +30,28 @@ export const Modal: React.FC<ModalProps> = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
       <div 
-        className={`w-full ${maxWidth} bg-[#faf9f5] border-2 border-slate-900 rounded-xl shadow-[4px_4px_0px_0px_rgba(15,23,42,1)] flex flex-col`}
+        className={`w-full ${maxWidth} bg-[#121824] border border-[#1e293b] rounded-xl shadow-xl flex flex-col`}
         role="dialog"
         aria-modal="true"
       >
-        <div className="flex items-center justify-between p-4 border-b-2 border-slate-900">
-          <h2 className="text-xl font-bold font-serif text-slate-900 tracking-tight">{title}</h2>
+        <div className="flex items-center justify-between px-5 py-4 border-b border-[#1e293b]">
+          <h2 className="text-base font-semibold text-slate-100 tracking-wide">{title}</h2>
           <button 
             onClick={onClose}
-            className="p-1.5 rounded-lg border-2 border-transparent text-slate-500 hover:text-slate-900 hover:border-slate-900 transition-colors"
+            className="p-1.5 rounded-lg text-slate-400 hover:text-slate-100 hover:bg-slate-800 transition-colors"
           >
-            <X size={20} />
+            <X size={18} />
           </button>
         </div>
         
-        <div className="p-6 overflow-y-auto max-h-[70vh]">
+        <div className="p-5 overflow-y-auto max-h-[70vh] text-slate-300 text-xs">
           {children}
         </div>
 
         {footer && (
-          <div className="flex items-center justify-end gap-3 p-4 border-t-2 border-slate-900 bg-white rounded-b-xl">
+          <div className="flex items-center justify-end gap-3 px-5 py-3 border-t border-[#1e293b] bg-[#0d121d] rounded-b-xl">
             {footer}
           </div>
         )}

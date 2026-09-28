@@ -1,244 +1,445 @@
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Zap, BarChart3, Bell, MonitorSmartphone, ArrowRight, Shield, TrendingDown, Activity, ChevronDown } from 'lucide-react';
+import { ArrowRight, Zap, Shield, Cpu, Activity, Sliders, CheckCircle2, ChevronRight, BarChart2 } from 'lucide-react';
 import poweriqLogo from '../assets/poweriq-logo.png';
 
-const FEATURES = [
-  {
-    icon: Activity,
-    title: 'Live Telemetry',
-    desc: 'Real-time power draw across every appliance, updated every 15 minutes via WebSocket stream.',
-  },
-  {
-    icon: MonitorSmartphone,
-    title: 'Device Control',
-    desc: 'Register, toggle, and configure every smart device in your home from a single control panel.',
-  },
-  {
-    icon: BarChart3,
-    title: 'Deep Analytics',
-    desc: 'Weekly profiles, hourly consumption charts, and solar-offset comparisons at your fingertips.',
-  },
-  {
-    icon: Bell,
-    title: 'Smart Alerts',
-    desc: 'Get notified instantly when a device spikes, a circuit overloads, or your bill is trending high.',
-  },
-  {
-    icon: TrendingDown,
-    title: 'Bill Forecasting',
-    desc: 'See your projected monthly bill in real time based on current usage patterns and tariff rates.',
-  },
-  {
-    icon: Shield,
-    title: 'Secure & Private',
-    desc: 'JWT-authenticated, per-user data isolation. Your energy data stays yours.',
-  },
-];
+interface InteractiveDevice {
+  id: string;
+  name: string;
+  room: string;
+  watts: number;
+  active: boolean;
+  category: string;
+}
 
-const HOW_IT_WORKS = [
-  {
-    step: '01',
-    title: 'Create Your Account',
-    desc: 'Sign up in seconds. No credit card, no frills — just your email and a password.',
-  },
-  {
-    step: '02',
-    title: 'Register Your Devices',
-    desc: 'Add your appliances by type — PowerIQ auto-fills rated wattage so setup takes under a minute.',
-  },
-  {
-    step: '03',
-    title: 'Monitor & Optimise',
-    desc: 'Watch live power data, toggle devices remotely, and use analytics to cut your energy bill.',
-  },
+const INITIAL_SIMULATOR_DEVICES: InteractiveDevice[] = [
+  { id: 'ac', name: '1.5T Inverter AC', room: 'Living Room', watts: 2100, active: true, category: 'HVAC' },
+  { id: 'geyser', name: 'Storage Geyser (25L)', room: 'Master Bath', watts: 2000, active: false, category: 'Water Heater' },
+  { id: 'fridge', name: 'Double Door Fridge', room: 'Kitchen', watts: 160, active: true, category: 'Refrigeration' },
+  { id: 'wm', name: 'Front Load Washer', room: 'Laundry', watts: 2200, active: true, category: 'Laundry' },
+  { id: 'ev', name: 'Level 2 EV Charger', room: 'Garage', watts: 7200, active: false, category: 'EV Charging' },
+  { id: 'workstation', name: 'Dual-Monitor PC', room: 'Study', watts: 380, active: true, category: 'Computing' },
 ];
 
 export default function Landing() {
+  const [devices, setDevices] = useState<InteractiveDevice[]>(INITIAL_SIMULATOR_DEVICES);
+  const [tariffRate, setTariffRate] = useState<number>(8.0); // ₹8/kWh
+  const [calcHours, setCalcHours] = useState<number>(6);
+  const [calcWatts, setCalcWatts] = useState<number>(2000);
+
+  // Telemetry Packet Log Simulation
+  const [logs, setLogs] = useState<string[]>([
+    '11:45:01 · TELEMETRY_PKT · device_id=split_ac_01 · draw=2.10kW · v=231V · status=OK',
+    '11:45:00 · TELEMETRY_PKT · device_id=fridge_01 · draw=0.16kW · v=229V · status=OK',
+    '11:44:58 · TARIFF_ENGINE · current_rate=₹8.00/kWh · aggregate_load=4.84kW',
+  ]);
+
+  const toggleDevice = (id: string) => {
+    setDevices(prev => prev.map(d => d.id === id ? { ...d, active: !d.active } : d));
+    const dev = devices.find(d => d.id === id);
+    if (dev) {
+      const now = new Date().toLocaleTimeString();
+      const statusText = !dev.active ? 'POWER_ON' : 'POWER_OFF';
+      const drawText = !dev.active ? `${(dev.watts / 1000).toFixed(2)}kW` : '0.00kW';
+      setLogs(prev => [
+        `${now} · EVENT_${statusText} · device=${dev.id} · new_draw=${drawText}`,
+        ...prev.slice(0, 5)
+      ]);
+    }
+  };
+
+  const activeDevicesCount = devices.filter(d => d.active).length;
+  const totalWatts = devices.reduce((sum, d) => d.active ? sum + d.watts : sum, 0);
+  const totalKw = (totalWatts / 1000).toFixed(2);
+  const estimatedDailyKwh = (totalWatts * 8) / 1000; // assuming avg 8h run
+  const estimatedMonthlyBill = Math.round(estimatedDailyKwh * 30 * tariffRate);
+
+  // Calculator outputs
+  const calcDailyKwh = (calcWatts * calcHours) / 1000;
+  const calcMonthlyCost = Math.round(calcDailyKwh * 30 * tariffRate);
+
   return (
-    <div className="min-h-screen bg-[#f4f1ea] font-sans text-slate-900">
-      {/* ── NAV ── */}
-      <nav className="fixed top-0 inset-x-0 z-50 border-b-2 border-slate-900 bg-[#faf9f5]/95 backdrop-blur-sm">
-        <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
-          <img src={poweriqLogo} alt="PowerIQ" className="h-12 w-auto object-contain mix-blend-darken" />
+    <div className="min-h-screen bg-[#090d14] text-slate-100 font-sans selection:bg-slate-700 selection:text-white">
+      
+      {/* ── TOP NAVIGATION ────────────────────────────────────────── */}
+      <nav className="sticky top-0 z-50 bg-[#0d121d]/90 backdrop-blur-md border-b border-[#1e293b]">
+        <div className="max-w-7xl mx-auto px-6 h-14 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <Link
-              to="/login"
-              className="text-[10px] font-bold uppercase tracking-widest text-slate-700 hover:text-slate-950 transition-colors px-3 py-1.5"
+            <img src={poweriqLogo} alt="PowerIQ" className="h-8 w-auto object-contain brightness-110" />
+            <span className="hidden sm:inline-flex items-center gap-1.5 text-[11px] text-slate-400 bg-[#141b29] border border-[#222d42] rounded-full px-2.5 py-0.5 font-mono">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 anim-pulse-subtle" />
+              v2.4 Telemetry Engine
+            </span>
+          </div>
+
+          <div className="flex items-center gap-3">
+            <Link 
+              to="/login" 
+              className="text-xs font-medium text-slate-300 hover:text-slate-100 px-3 py-1.5 transition-colors"
             >
               Sign In
             </Link>
-            <Link
-              to="/register"
-              className="text-[10px] font-bold uppercase tracking-widest text-white bg-[#1a2a3a] border-2 border-slate-900 rounded-lg px-4 py-1.5 shadow-[2px_2px_0px_0px_rgba(15,23,42,1)] hover:bg-[#25394e] active:translate-x-[1px] active:translate-y-[1px] active:shadow-[1px_1px_0px_0px_rgba(15,23,42,1)] transition-all"
+            <Link 
+              to="/register" 
+              className="text-xs font-medium text-slate-100 bg-[#1e293b] hover:bg-[#28364f] border border-[#334155] rounded-lg px-3.5 py-1.5 transition-all"
             >
-              Get Started
+              Register Account
             </Link>
           </div>
         </div>
       </nav>
 
-      {/* ── HERO ── */}
-      <section className="pt-36 pb-24 px-6 text-center relative overflow-hidden">
-        {/* Dot grid background */}
-        <div className="absolute inset-0 opacity-[0.04] pointer-events-none"
-          style={{ backgroundImage: 'radial-gradient(#000 1px, transparent 1px)', backgroundSize: '20px 20px' }} />
-
-        {/* Live badge */}
-        <div className="inline-flex items-center gap-2 bg-white border-2 border-slate-900 rounded-full px-4 py-1.5 mb-8 shadow-[2px_2px_0px_0px_rgba(15,23,42,1)]">
-          <span className="w-2 h-2 rounded-full bg-emerald-600 animate-pulse" />
-          <span className="text-[10px] font-bold uppercase tracking-widest text-slate-700">Live Energy Intelligence</span>
-        </div>
-
-        <h1 className="text-5xl md:text-7xl font-extrabold font-serif tracking-tight text-slate-900 leading-[1.05] max-w-4xl mx-auto">
-          Know exactly where<br />
-          <span className="text-[#c5a059]">every watt</span> goes.
-        </h1>
-
-        <p className="mt-6 text-slate-600 text-base max-w-xl mx-auto leading-relaxed">
-          PowerIQ connects to your smart appliances, streams real-time telemetry, and gives you the analytics to cut your electricity bill — starting today.
-        </p>
-
-        <div className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4">
-          <Link
-            to="/register"
-            className="flex items-center gap-2 text-sm font-bold uppercase tracking-widest text-white bg-[#1a2a3a] border-2 border-slate-900 rounded-xl px-6 py-3 shadow-[4px_4px_0px_0px_rgba(15,23,42,1)] hover:bg-[#25394e] active:translate-x-[2px] active:translate-y-[2px] active:shadow-[2px_2px_0px_0px_rgba(15,23,42,1)] transition-all"
-          >
-            Start for Free <ArrowRight size={16} />
-          </Link>
-          <Link
-            to="/login"
-            className="text-sm font-bold uppercase tracking-widest text-slate-700 border-2 border-slate-900 rounded-xl px-6 py-3 bg-white shadow-[4px_4px_0px_0px_rgba(15,23,42,1)] hover:bg-[#f4f1ea] active:translate-x-[2px] active:translate-y-[2px] active:shadow-[2px_2px_0px_0px_rgba(15,23,42,1)] transition-all"
-          >
-            Sign In
-          </Link>
-        </div>
-
-        {/* Scroll cue */}
-        <div className="mt-16 flex flex-col items-center gap-1 text-slate-400 animate-bounce">
-          <span className="text-[9px] uppercase tracking-widest font-bold">Scroll to explore</span>
-          <ChevronDown size={16} />
-        </div>
-      </section>
-
-      {/* ── STATS STRIP ── */}
-      <section className="border-y-2 border-slate-900 bg-[#1a2a3a] py-6 px-6">
-        <div className="max-w-6xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-6 text-center">
-          {[
-            { value: '₹2,400+', label: 'Avg. Annual Savings' },
-            { value: '15 min', label: 'Telemetry Interval' },
-            { value: '8+', label: 'Device Types Supported' },
-            { value: '100%', label: 'Secure & Private' },
-          ].map((s) => (
-            <div key={s.label}>
-              <p className="text-2xl font-extrabold font-serif text-[#c5a059]">{s.value}</p>
-              <p className="text-[10px] font-bold uppercase tracking-widest text-slate-300 mt-0.5">{s.label}</p>
+      {/* ── HERO SECTION: Live Interactive Console ────────────────────────────── */}
+      <section className="max-w-7xl mx-auto px-6 pt-12 pb-16">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-center">
+          
+          {/* Hero Content Left */}
+          <div className="lg:col-span-6 space-y-6">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-md bg-[#121824] border border-[#1e293b] text-xs text-slate-400 font-mono">
+              <Zap size={13} className="text-slate-300" />
+              <span>Device-level power telemetry & tariff intelligence</span>
             </div>
-          ))}
+
+            <h1 className="text-3xl md:text-5xl font-bold tracking-tight text-slate-100 leading-tight">
+              Know exactly which appliance is inflating your electricity bill.
+            </h1>
+
+            <p className="text-slate-400 text-sm leading-relaxed max-w-xl">
+              PowerIQ monitors telemetry per device — calculating true hourly power draw and monthly rupee costs across every room. No estimated averages. Pure appliance transparency.
+            </p>
+
+            <div className="flex flex-wrap items-center gap-3 pt-2">
+              <Link 
+                to="/register" 
+                className="inline-flex items-center gap-2 text-xs font-medium text-slate-950 bg-slate-100 hover:bg-white rounded-lg px-5 py-2.5 transition-all"
+              >
+                Start Monitoring Your Home <ArrowRight size={14} />
+              </Link>
+              <Link 
+                to="/login" 
+                className="inline-flex items-center gap-2 text-xs font-medium text-slate-300 bg-[#121824] hover:bg-[#182030] border border-[#1e293b] rounded-lg px-4 py-2.5 transition-all"
+              >
+                Sign In to Dashboard
+              </Link>
+            </div>
+
+            {/* Quick Specs */}
+            <div className="grid grid-cols-3 gap-4 pt-4 border-t border-[#1e293b] text-xs">
+              <div>
+                <span className="text-slate-500 block text-[11px]">Sampling</span>
+                <span className="font-mono text-slate-200 font-medium">15-min Telemetry</span>
+              </div>
+              <div>
+                <span className="text-slate-500 block text-[11px]">Tariff Model</span>
+                <span className="font-mono text-slate-200 font-medium">₹/kWh Tiered</span>
+              </div>
+              <div>
+                <span className="text-slate-500 block text-[11px]">Isolation</span>
+                <span className="font-mono text-slate-200 font-medium">Per-User DB</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Hero Interactive Console Right */}
+          <div className="lg:col-span-6">
+            <div className="bg-[#121824] border border-[#1e293b] rounded-xl p-5 shadow-2xl space-y-4">
+              
+              {/* Header of Interactive Console */}
+              <div className="flex items-center justify-between border-b border-[#1e293b] pb-3">
+                <div className="flex items-center gap-2">
+                  <span className="w-2 h-2 rounded-full bg-emerald-500 anim-pulse-subtle" />
+                  <span className="text-xs font-semibold text-slate-200">Interactive Telemetry Console</span>
+                </div>
+                <span className="text-[11px] font-mono text-slate-400">Click toggles to test live load</span>
+              </div>
+
+              {/* Console KPI Metrics */}
+              <div className="grid grid-cols-3 gap-3 bg-[#0d121d] border border-[#1e293b] rounded-lg p-3 text-center">
+                <div>
+                  <p className="text-[10px] text-slate-500 uppercase tracking-wider">Active Load</p>
+                  <p className="text-xl font-bold font-mono text-slate-100">{totalKw} <span className="text-xs text-slate-400 font-sans">kW</span></p>
+                </div>
+                <div>
+                  <p className="text-[10px] text-slate-500 uppercase tracking-wider">Est. Monthly</p>
+                  <p className="text-xl font-bold font-mono text-slate-100">₹{estimatedMonthlyBill.toLocaleString()}</p>
+                </div>
+                <div>
+                  <p className="text-[10px] text-slate-500 uppercase tracking-wider">Active Devices</p>
+                  <p className="text-xl font-bold font-mono text-slate-100">{activeDevicesCount} / {devices.length}</p>
+                </div>
+              </div>
+
+              {/* Interactive Device Switches Grid */}
+              <div className="space-y-2">
+                <p className="text-[11px] font-medium text-slate-400">Simulated Home Devices (Click to Toggle):</p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  {devices.map(d => (
+                    <button
+                      key={d.id}
+                      onClick={() => toggleDevice(d.id)}
+                      className={`flex items-center justify-between px-3 py-2 rounded-lg border text-left transition-all ${
+                        d.active 
+                          ? 'bg-[#182236] border-[#2b3a5a] text-slate-100' 
+                          : 'bg-[#090d14] border-[#182030] text-slate-500 hover:border-[#222d42]'
+                      }`}
+                    >
+                      <div>
+                        <p className="text-xs font-medium leading-tight">{d.name}</p>
+                        <p className="text-[10px] text-slate-400 font-mono mt-0.5">{d.room} · {(d.watts/1000).toFixed(2)}kW</p>
+                      </div>
+                      <div className={`w-7 h-4 rounded-full p-0.5 transition-colors ${d.active ? 'bg-emerald-600' : 'bg-slate-700'}`}>
+                        <div className={`w-3 h-3 rounded-full bg-white transition-transform ${d.active ? 'translate-x-3' : 'translate-x-0'}`} />
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Live Telemetry Log Output */}
+              <div className="bg-[#090d14] border border-[#1e293b] rounded-lg p-3 font-mono text-[10px] space-y-1 text-slate-400 max-h-24 overflow-hidden">
+                <p className="text-slate-500 border-b border-[#182030] pb-1 text-[9px] uppercase tracking-wider">Telemetry Packet Stream Log:</p>
+                {logs.map((log, i) => (
+                  <p key={i} className="truncate text-slate-300">{log}</p>
+                ))}
+              </div>
+
+            </div>
+          </div>
+
         </div>
       </section>
 
-      {/* ── FEATURES ── */}
-      <section className="py-24 px-6">
-        <div className="max-w-6xl mx-auto">
-          <div className="text-center mb-14">
-            <span className="inline-block bg-white border-2 border-slate-900 px-3 py-1 text-[10px] font-bold uppercase tracking-widest text-slate-600 rounded-lg shadow-[2px_2px_0px_0px_rgba(15,23,42,1)] mb-4">
-              Platform Features
-            </span>
-            <h2 className="text-3xl md:text-4xl font-extrabold font-serif text-slate-900 tracking-tight">
-              Everything you need to own your energy.
-            </h2>
+      {/* ── APPLIANCE COST CALCULATOR ────────────────────────────── */}
+      <section className="border-y border-[#1e293b] bg-[#0d121d] py-14 px-6">
+        <div className="max-w-7xl mx-auto space-y-8">
+          
+          <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
+            <div>
+              <span className="text-xs font-mono text-slate-400 uppercase tracking-wider">Interactive Utility Calculator</span>
+              <h2 className="text-2xl md:text-3xl font-bold text-slate-100 tracking-tight mt-1">
+                Calculate what an appliance costs on your tariff
+              </h2>
+            </div>
+            <p className="text-xs text-slate-400 max-w-sm leading-relaxed">
+              Adjust wattage and daily run hours to inspect how much a single appliance adds to your monthly electric bill.
+            </p>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {FEATURES.map((f) => {
-              const Icon = f.icon;
-              return (
-                <div
-                  key={f.title}
-                  className="bg-white border-2 border-slate-900 rounded-2xl p-6 shadow-[4px_4px_0px_0px_rgba(15,23,42,1)] hover:-translate-y-1 hover:shadow-[4px_6px_0px_0px_rgba(15,23,42,1)] transition-all duration-200 text-left"
-                >
-                  <div className="w-10 h-10 rounded-lg bg-[#1a2a3a] border-2 border-slate-900 flex items-center justify-center text-[#c5a059] mb-4 shadow-[2px_2px_0px_0px_rgba(15,23,42,1)]">
-                    <Icon size={18} />
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 bg-[#121824] border border-[#1e293b] rounded-xl p-6">
+            
+            {/* Controls */}
+            <div className="lg:col-span-7 space-y-5">
+              
+              {/* Rated Wattage */}
+              <div className="space-y-2">
+                <div className="flex justify-between text-xs">
+                  <span className="text-slate-300 font-medium">Appliance Rated Power</span>
+                  <span className="font-mono text-slate-100 font-bold">{calcWatts} Watts ({(calcWatts/1000).toFixed(2)} kW)</span>
+                </div>
+                <input 
+                  type="range" 
+                  min="50" 
+                  max="8000" 
+                  step="50"
+                  value={calcWatts}
+                  onChange={(e) => setCalcWatts(Number(e.target.value))}
+                  className="w-full accent-slate-300 bg-slate-800 rounded-lg cursor-pointer"
+                />
+                <div className="flex justify-between text-[10px] text-slate-500 font-mono">
+                  <span>50W (LED)</span>
+                  <span>1500W (Geyser)</span>
+                  <span>2400W (Oven)</span>
+                  <span>7200W (EV)</span>
+                </div>
+              </div>
+
+              {/* Hours Per Day */}
+              <div className="space-y-2">
+                <div className="flex justify-between text-xs">
+                  <span className="text-slate-300 font-medium">Daily Usage Duration</span>
+                  <span className="font-mono text-slate-100 font-bold">{calcHours} Hours / Day</span>
+                </div>
+                <input 
+                  type="range" 
+                  min="1" 
+                  max="24" 
+                  step="1"
+                  value={calcHours}
+                  onChange={(e) => setCalcHours(Number(e.target.value))}
+                  className="w-full accent-slate-300 bg-slate-800 rounded-lg cursor-pointer"
+                />
+              </div>
+
+              {/* Tariff Rate */}
+              <div className="space-y-2">
+                <div className="flex justify-between text-xs">
+                  <span className="text-slate-300 font-medium">Electricity Tariff Rate</span>
+                  <span className="font-mono text-slate-100 font-bold">₹{tariffRate.toFixed(2)} / kWh</span>
+                </div>
+                <div className="flex gap-2">
+                  {[6.5, 8.0, 9.5, 12.0].map(rate => (
+                    <button
+                      key={rate}
+                      onClick={() => setTariffRate(rate)}
+                      className={`px-3 py-1.5 rounded-lg text-xs font-mono transition-all border ${
+                        tariffRate === rate 
+                          ? 'bg-[#1e293b] text-slate-100 border-slate-500 font-bold' 
+                          : 'bg-[#090d14] text-slate-400 border-[#1e293b] hover:text-slate-200'
+                      }`}
+                    >
+                      ₹{rate.toFixed(1)}/kWh
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+            </div>
+
+            {/* Result Panel */}
+            <div className="lg:col-span-5 bg-[#090d14] border border-[#1e293b] rounded-xl p-5 flex flex-col justify-between space-y-4">
+              <div>
+                <p className="text-[11px] font-mono text-slate-500 uppercase tracking-wider">Calculated Impact</p>
+                <div className="mt-3 space-y-3">
+                  <div>
+                    <span className="text-xs text-slate-400">Daily Consumption</span>
+                    <p className="text-lg font-bold font-mono text-slate-200">{calcDailyKwh.toFixed(2)} <span className="text-xs font-normal text-slate-400">kWh / day</span></p>
                   </div>
-                  <h3 className="font-bold font-serif text-slate-900 text-base mb-1">{f.title}</h3>
-                  <p className="text-xs text-slate-500 leading-relaxed">{f.desc}</p>
+                  <div className="pt-2 border-t border-[#182030]">
+                    <span className="text-xs text-slate-400">Estimated Monthly Expenditure</span>
+                    <p className="text-3xl font-bold font-mono text-slate-100 mt-0.5">₹{calcMonthlyCost.toLocaleString()}</p>
+                    <p className="text-[11px] text-slate-500 mt-1">Based on 30 billing days at ₹{tariffRate}/kWh</p>
+                  </div>
                 </div>
-              );
-            })}
+              </div>
+
+              <div className="pt-3 border-t border-[#182030] text-[11px] text-slate-400 flex items-center gap-2">
+                <CheckCircle2 size={14} className="text-slate-400 shrink-0" />
+                <span>PowerIQ tracks this exact metric live per device from your smart meter data.</span>
+              </div>
+            </div>
+
           </div>
+
         </div>
       </section>
 
-      {/* ── HOW IT WORKS ── */}
-      <section className="py-24 px-6 bg-[#faf9f5] border-y-2 border-slate-900">
-        <div className="max-w-5xl mx-auto">
-          <div className="text-center mb-14">
-            <span className="inline-block bg-white border-2 border-slate-900 px-3 py-1 text-[10px] font-bold uppercase tracking-widest text-slate-600 rounded-lg shadow-[2px_2px_0px_0px_rgba(15,23,42,1)] mb-4">
-              How It Works
-            </span>
-            <h2 className="text-3xl md:text-4xl font-extrabold font-serif text-slate-900 tracking-tight">
-              Up and running in 3 steps.
-            </h2>
+      {/* ── ARCHITECTURE FEATURES ──────────────────────────────── */}
+      <section className="max-w-7xl mx-auto px-6 py-16 space-y-12">
+        <div>
+          <span className="text-xs font-mono text-slate-400 uppercase tracking-wider">Platform Capabilities</span>
+          <h2 className="text-2xl md:text-3xl font-bold text-slate-100 tracking-tight mt-1">
+            Engineered for precision energy management
+          </h2>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          
+          <div className="bg-[#121824] border border-[#1e293b] rounded-xl p-6 space-y-3">
+            <div className="w-9 h-9 rounded-lg bg-[#1a2336] border border-[#2a3650] flex items-center justify-center text-slate-200">
+              <Activity size={18} />
+            </div>
+            <h3 className="text-base font-semibold text-slate-100">Live Telemetry Pipeline</h3>
+            <p className="text-xs text-slate-400 leading-relaxed">
+              Streams wattage, voltage, and current draw at 15-minute intervals directly to your dashboard without manual reads or daily rollups.
+            </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {HOW_IT_WORKS.map((step, i) => (
-              <div key={step.step} className="relative text-left">
-                {/* Connector line */}
-                {i < HOW_IT_WORKS.length - 1 && (
-                  <div className="hidden md:block absolute top-6 left-full w-full h-[2px] bg-slate-900 -translate-y-1/2 z-0" style={{ width: 'calc(100% - 3rem)', left: '3.5rem' }} />
-                )}
-                <div className="relative z-10 bg-white border-2 border-slate-900 rounded-2xl p-6 shadow-[4px_4px_0px_0px_rgba(15,23,42,1)]">
-                  <span className="inline-block font-mono text-3xl font-extrabold text-[#c5a059] mb-3">{step.step}</span>
-                  <h3 className="font-bold font-serif text-slate-900 text-base mb-2">{step.title}</h3>
-                  <p className="text-xs text-slate-500 leading-relaxed">{step.desc}</p>
-                </div>
+          <div className="bg-[#121824] border border-[#1e293b] rounded-xl p-6 space-y-3">
+            <div className="w-9 h-9 rounded-lg bg-[#1a2336] border border-[#2a3650] flex items-center justify-center text-slate-200">
+              <Sliders size={18} />
+            </div>
+            <h3 className="text-base font-semibold text-slate-100">Built-in Device Library</h3>
+            <p className="text-xs text-slate-400 leading-relaxed">
+              Pre-loaded with 16 device categories (ACs, geysers, EV chargers, refrigerators) and rated wattage benchmarks to streamline setup.
+            </p>
+          </div>
+
+          <div className="bg-[#121824] border border-[#1e293b] rounded-xl p-6 space-y-3">
+            <div className="w-9 h-9 rounded-lg bg-[#1a2336] border border-[#2a3650] flex items-center justify-center text-slate-200">
+              <Shield size={18} />
+            </div>
+            <h3 className="text-base font-semibold text-slate-100">Isolated Data Isolation</h3>
+            <p className="text-xs text-slate-400 leading-relaxed">
+              Each user account operates with isolated database scopes and JWT auth security, ensuring telemetry privacy across homes.
+            </p>
+          </div>
+
+        </div>
+      </section>
+
+      {/* ── DEVICE TYPE PRESETS ─────────────────────────────────── */}
+      <section className="border-t border-[#1e293b] bg-[#0d121d] py-14 px-6">
+        <div className="max-w-7xl mx-auto space-y-6">
+          <div className="flex justify-between items-end">
+            <div>
+              <span className="text-xs font-mono text-slate-400 uppercase tracking-wider">Device Profiles</span>
+              <h2 className="text-xl font-bold text-slate-100 tracking-tight mt-0.5">Pre-configured appliance wattages</h2>
+            </div>
+            <Link to="/register" className="text-xs font-medium text-slate-400 hover:text-slate-100 flex items-center gap-1">
+              View full list <ChevronRight size={14} />
+            </Link>
+          </div>
+
+          <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-3">
+            {[
+              { label: 'HVAC', watts: '2100W' },
+              { label: 'Refrigeration', watts: '160W' },
+              { label: 'Water Heater', watts: '2000W' },
+              { label: 'Washing', watts: '2200W' },
+              { label: 'Oven', watts: '2400W' },
+              { label: 'Television', watts: '150W' },
+              { label: 'EV Charger', watts: '7200W' },
+              { label: 'Workstation', watts: '380W' },
+            ].map(item => (
+              <div key={item.label} className="bg-[#121824] border border-[#1e293b] rounded-lg p-3 text-center">
+                <p className="text-xs font-medium text-slate-200 truncate">{item.label}</p>
+                <p className="text-[10px] font-mono text-slate-400 mt-1">{item.watts}</p>
               </div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* ── CTA ── */}
-      <section className="py-24 px-6 text-center">
-        <div className="max-w-2xl mx-auto">
-          <div className="bg-[#1a2a3a] border-2 border-slate-900 rounded-3xl p-10 shadow-[6px_6px_0px_0px_rgba(15,23,42,1)]">
-            <Zap size={32} className="text-[#c5a059] mx-auto mb-4" />
-            <h2 className="text-3xl font-extrabold font-serif text-white tracking-tight mb-3">
-              Ready to take control?
-            </h2>
-            <p className="text-slate-300 text-sm leading-relaxed mb-8">
-              Create your free PowerIQ account and start monitoring your home's energy footprint in minutes.
+      {/* ── BOTTOM CTA ─────────────────────────────────────────── */}
+      <section className="py-16 px-6 max-w-7xl mx-auto">
+        <div className="bg-[#121824] border border-[#1e293b] rounded-xl p-8 md:p-10 flex flex-col md:flex-row items-center justify-between gap-6">
+          <div className="space-y-2">
+            <h2 className="text-2xl font-bold text-slate-100 tracking-tight">Ready to set up your home?</h2>
+            <p className="text-xs text-slate-400 max-w-md">
+              Create an account to configure your rooms, add your appliances, and view live telemetry breakdown.
             </p>
-            <Link
-              to="/register"
-              className="inline-flex items-center gap-2 text-sm font-bold uppercase tracking-widest text-[#1a2a3a] bg-[#c5a059] border-2 border-[#b08c45] rounded-xl px-8 py-3 shadow-[4px_4px_0px_0px_rgba(15,23,42,1)] hover:bg-[#d4b06a] active:translate-x-[2px] active:translate-y-[2px] active:shadow-[2px_2px_0px_0px_rgba(15,23,42,1)] transition-all"
+          </div>
+          <div className="flex items-center gap-3 shrink-0">
+            <Link 
+              to="/register" 
+              className="text-xs font-medium text-slate-950 bg-slate-100 hover:bg-white rounded-lg px-5 py-2.5 transition-all"
             >
-              Create Free Account <ArrowRight size={16} />
+              Register Now
             </Link>
-            <p className="mt-4 text-slate-400 text-[10px] uppercase tracking-wider font-bold">
-              Already have an account?{' '}
-              <Link to="/login" className="text-[#c5a059] hover:underline">
-                Sign in here
-              </Link>
-            </p>
+            <Link 
+              to="/login" 
+              className="text-xs font-medium text-slate-300 bg-[#090d14] hover:bg-[#0f1522] border border-[#1e293b] rounded-lg px-4 py-2.5 transition-all"
+            >
+              Sign In
+            </Link>
           </div>
         </div>
       </section>
 
-      {/* ── FOOTER ── */}
-      <footer className="border-t-2 border-slate-900 bg-[#faf9f5] py-8 px-6">
-        <div className="max-w-6xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
-          <img src={poweriqLogo} alt="PowerIQ" className="h-10 w-auto object-contain mix-blend-darken" />
-          <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">
-            © 2026 PowerIQ · Smart Energy Analytics
-          </p>
-          <div className="flex gap-4 text-[10px] font-bold uppercase tracking-widest text-slate-500">
-            <Link to="/login" className="hover:text-slate-900 transition-colors">Sign In</Link>
-            <Link to="/register" className="hover:text-slate-900 transition-colors">Register</Link>
+      {/* ── FOOTER ─────────────────────────────────────────────── */}
+      <footer className="border-t border-[#1e293b] bg-[#0d121d] py-6 px-6">
+        <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-slate-400">
+          <div className="flex items-center gap-3">
+            <img src={poweriqLogo} alt="PowerIQ" className="h-7 w-auto object-contain brightness-110" />
+            <span>Telemetry & Smart Energy Intelligence</span>
+          </div>
+          <div className="flex gap-4 text-slate-400">
+            <Link to="/login" className="hover:text-slate-200">Sign In</Link>
+            <Link to="/register" className="hover:text-slate-200">Register</Link>
           </div>
         </div>
       </footer>
+
     </div>
   );
 }

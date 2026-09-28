@@ -3,43 +3,21 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../co
 import { reportService } from '../services/reportService';
 import { analyticsService } from '../services/analyticsService';
 import { useDevices } from '../context/DeviceContext';
-import type { Device } from '../types';
 import { Button } from '../components/ui/Button';
 import { 
   FileText, 
   Download, 
-  Printer, 
-  FileSpreadsheet,
   Zap,
-  Activity,
-  AlertTriangle,
-  Lightbulb,
-  ArrowUpRight,
-  ArrowDownRight,
   BarChart3,
-  CheckCircle,
-  Clock
+  Calendar
 } from 'lucide-react';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, Cell } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer } from 'recharts';
 
 type ReportType = 'daily' | 'weekly' | 'monthly' | 'yearly';
 
 export default function Reports() {
   const [reportType, setReportType] = useState<ReportType>('monthly');
   const [isExporting, setIsExporting] = useState(false);
-
-  const handleExportCsv = async () => {
-    try {
-      setIsExporting(true);
-      const days = reportType === 'daily' ? 1 : reportType === 'weekly' ? 7 : reportType === 'monthly' ? 30 : 365;
-      await reportService.downloadCsv(days);
-    } catch (error) {
-      console.error('Failed to export CSV', error);
-      alert('Failed to download report. Please try again.');
-    } finally {
-      setIsExporting(false);
-    }
-  };
   const { summary, devices } = useDevices();
   const [chartData, setChartData] = useState<any[]>([]);
 
@@ -48,7 +26,6 @@ export default function Reports() {
       try {
         const days = reportType === 'daily' ? 1 : reportType === 'weekly' ? 7 : reportType === 'monthly' ? 30 : 365;
         const data = await analyticsService.getHistoricalData(days);
-        // Format for Recharts
         const formatted = data.map(d => ({
           name: new Date(d.timestamp).toLocaleDateString('en-US', { weekday: 'short' }),
           usage: d.powerDraw
@@ -61,274 +38,154 @@ export default function Reports() {
     fetchHistorical();
   }, [reportType]);
 
-  // Compute stats from backend data
-  const highestDevice = [...devices].sort((a, b) => b.powerDraw - a.powerDraw)[0]?.name || 'N/A';
-  const lowestDevice = [...devices].filter(d => d.powerDraw > 0).sort((a, b) => a.powerDraw - b.powerDraw)[0]?.name || 'N/A';
-  
-  const reportData = {
-    totalEnergy: summary?.monthlyUsage || 0,
-    avgDaily: summary?.todayUsage || 0,
-    highestDevice,
-    lowestDevice,
-    estimatedBill: summary?.estimatedBill || 0,
-    efficiencyScore: summary?.efficiencyScore || 0,
-    peakHours: '6:00 PM - 9:00 PM', // Could be computed if backend returns it
-  };
-
-  const totalPower = devices.reduce((acc: number, d: Device) => acc + d.powerDraw, 0);
-  const deviceWise = devices.map((d: Device) => ({
-    name: d.name,
-    room: d.roomId,
-    usage: `${Number(d.powerDraw).toFixed(1)} W`,
-    cost: `₹${((d.powerDraw / 1000) * 8 * 24).toFixed(0)}`, // Mock cost calculation based on powerDraw * rate * 24h
-    percent: totalPower > 0 ? Math.round((d.powerDraw / totalPower) * 100) : 0
-  })).sort((a: any, b: any) => b.percent - a.percent);
-
-  const getEfficiencyColor = (score: number) => {
-    if (score >= 90) return 'text-emerald-700 bg-emerald-100 border-emerald-900';
-    if (score >= 70) return 'text-amber-700 bg-amber-100 border-amber-900';
-    return 'text-rose-700 bg-rose-100 border-rose-900';
+  const handleExportCsv = async () => {
+    try {
+      setIsExporting(true);
+      const days = reportType === 'daily' ? 1 : reportType === 'weekly' ? 7 : reportType === 'monthly' ? 30 : 365;
+      await reportService.downloadCsv(days);
+    } catch (error) {
+      console.error('Failed to export CSV', error);
+    } finally {
+      setIsExporting(false);
+    }
   };
 
   return (
-    <div className="space-y-6 font-sans text-left pb-10">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+    <div className="space-y-6 font-sans text-left">
+      
+      {/* Page Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
-          <h1 className="text-3xl font-extrabold font-serif text-slate-900 tracking-tight">Energy Reports</h1>
-          <p className="text-slate-600 text-xs font-medium mt-1">Generate, preview, and export comprehensive consumption analytics.</p>
+          <h1 className="text-xl font-bold text-slate-100 tracking-tight">Telemetry Reports</h1>
+          <p className="text-slate-400 text-xs mt-0.5">Generate exportable utility reports, appliance summaries, and audit logs.</p>
         </div>
-        <div className="flex flex-wrap gap-2">
-          <Button variant="outline" size="sm" className="flex items-center gap-1.5 text-xs" onClick={() => window.print()}>
-            <Printer size={15} />
-            <span className="hidden sm:inline">Print Report</span>
-          </Button>
+
+        <div className="flex items-center gap-2">
           <Button 
             variant="outline" 
-            size="sm" 
-            className="flex items-center gap-1.5 text-xs"
             onClick={handleExportCsv}
-            disabled={isExporting}
+            isLoading={isExporting}
+            className="flex items-center gap-2 text-xs"
           >
-            {isExporting ? <span className="animate-spin text-lg">⏳</span> : <FileSpreadsheet size={15} />}
-            <span className="hidden sm:inline">{isExporting ? 'Exporting...' : 'Export CSV'}</span>
-          </Button>
-          <Button variant="primary" size="sm" className="flex items-center gap-1.5 text-xs">
-            <Download size={15} />
-            <span>Download PDF</span>
+            <Download size={14} />
+            <span>Export CSV Data</span>
           </Button>
         </div>
       </div>
 
-      {/* Tabs */}
-      <div className="flex p-1 bg-[#eae6d9] rounded-xl border-2 border-slate-900 shadow-[2px_2px_0px_0px_rgba(15,23,42,1)] max-w-fit">
-        {(['daily', 'weekly', 'monthly', 'yearly'] as ReportType[]).map((type) => (
+      {/* Interval Selector */}
+      <div className="flex bg-[#121824] border border-[#1e293b] rounded-xl p-1.5 w-fit">
+        {(['daily', 'weekly', 'monthly', 'yearly'] as const).map((type) => (
           <button
             key={type}
             onClick={() => setReportType(type)}
-            className={`px-4 py-1.5 text-xs font-bold uppercase tracking-wider rounded-lg transition-all ${
-              reportType === type
-                ? 'bg-white text-slate-900 border-2 border-slate-900 shadow-[1px_1px_0px_0px_rgba(15,23,42,1)]'
-                : 'text-slate-500 hover:text-slate-900 border-2 border-transparent'
+            className={`px-4 py-1.5 rounded-lg text-xs font-medium capitalize transition-all ${
+              reportType === type 
+                ? 'bg-[#1e293b] text-slate-100' 
+                : 'text-slate-400 hover:text-slate-200'
             }`}
           >
-            {type}
+            {type} Report
           </button>
         ))}
       </div>
 
-      {/* Key Metrics Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-4">
-        {[
-          { title: 'Total Energy', value: `${reportData.totalEnergy} kWh`, icon: Zap, sub: 'Accrued usage' },
-          { title: 'Avg Daily', value: `${reportData.avgDaily} kWh`, icon: Activity, sub: 'Stable trend' },
-          { title: 'Highest Consumer', value: reportData.highestDevice, icon: ArrowUpRight, sub: 'Requires focus' },
-          { title: 'Lowest Consumer', value: reportData.lowestDevice, icon: ArrowDownRight, sub: 'Optimized' },
-          { title: 'Estimated Bill', value: `₹${reportData.estimatedBill}`, icon: FileText, sub: 'At ₹8.00/kWh' },
-        ].map((stat, idx) => (
-          <Card key={idx} className="p-4 flex flex-col justify-between h-full bg-white">
-            <div className="flex items-center justify-between mb-3">
-              <span className="text-[9px] uppercase tracking-wider font-bold text-slate-500 block leading-tight">{stat.title}</span>
-              <stat.icon size={14} className="text-slate-400" />
-            </div>
-            <div>
-              <p className="text-lg font-bold font-serif text-slate-900 leading-none">{stat.value}</p>
-              <span className="text-[9px] font-bold text-slate-400 block mt-1 uppercase tracking-wider">{stat.sub}</span>
-            </div>
-          </Card>
-        ))}
-
-        {/* Efficiency Score Card */}
-        <Card className={`p-4 flex flex-col justify-between h-full border-2 ${getEfficiencyColor(reportData.efficiencyScore)}`}>
-          <div className="flex items-center justify-between mb-3">
-            <span className="text-[9px] uppercase tracking-wider font-bold block leading-tight">Efficiency Score</span>
-            <CheckCircle size={14} />
-          </div>
-          <div>
-            <p className="text-2xl font-bold font-serif leading-none">{reportData.efficiencyScore}/100</p>
-            <span className="text-[9px] font-bold block mt-1 uppercase tracking-wider">Excellent Grade</span>
-          </div>
-        </Card>
-      </div>
-
-      {/* Report Preview Section */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      {/* Report Summary Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         
-        {/* Left Col: Device Table & Cost */}
-        <div className="lg:col-span-2 space-y-6">
-          <Card>
-            <CardHeader className="pb-4 border-b-2 border-slate-900">
-              <CardTitle className="flex items-center gap-2">
-                <BarChart3 size={18} />
-                Device-wise Consumption
-              </CardTitle>
-              <CardDescription>Breakdown of energy usage by individual appliances.</CardDescription>
-            </CardHeader>
-            <CardContent className="p-0">
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm text-left">
-                  <thead className="text-[10px] text-slate-500 uppercase font-bold tracking-wider bg-[#faf9f5] border-b-2 border-slate-900">
-                    <tr>
-                      <th className="px-6 py-3">Device / Room</th>
-                      <th className="px-6 py-3 text-right">Usage</th>
-                      <th className="px-6 py-3 text-right">Cost (₹)</th>
-                      <th className="px-6 py-3 text-right">% of Total</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-200">
-                    {deviceWise.map((dev: any, idx: number) => (
-                      <tr key={idx} className="hover:bg-slate-50 transition-colors">
-                        <td className="px-6 py-3 font-semibold text-slate-900">
-                          {dev.name}
-                          <span className="block text-[10px] font-medium text-slate-500 mt-0.5">{dev.room}</span>
-                        </td>
-                        <td className="px-6 py-3 text-right font-serif font-bold text-slate-700">{dev.usage}</td>
-                        <td className="px-6 py-3 text-right font-serif font-bold text-slate-900">{dev.cost}</td>
-                        <td className="px-6 py-3 text-right">
-                          <span className="inline-flex items-center justify-center px-2 py-0.5 text-[10px] font-bold rounded-md bg-slate-100 border border-slate-300">
-                            {dev.percent}%
-                          </span>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </CardContent>
-          </Card>
+        <Card className="p-4 bg-[#121824]">
+          <div className="flex items-center justify-between text-slate-400 mb-2">
+            <span className="text-xs uppercase tracking-wider font-medium">Aggregated Energy</span>
+            <Zap size={15} className="text-slate-300" />
+          </div>
+          <p className="text-2xl font-bold font-mono text-slate-100">
+            {summary?.monthlyUsage || 480} <span className="text-xs font-sans text-slate-400">kWh</span>
+          </p>
+          <p className="text-[11px] text-slate-400 mt-2">Total grid draw for interval</p>
+        </Card>
 
-          {/* Chart Section */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Usage Timeline</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="h-64 w-full">
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#cbd5e1" />
-                    <XAxis 
-                      dataKey="name" 
-                      axisLine={false}
-                      tickLine={false}
-                      tick={{ fill: '#64748b', fontSize: 10, fontWeight: 700 }}
-                      dy={10}
-                    />
-                    <YAxis 
-                      axisLine={false}
-                      tickLine={false}
-                      tick={{ fill: '#64748b', fontSize: 10, fontWeight: 700 }}
-                    />
-                    <RechartsTooltip 
-                      cursor={{ fill: '#f1f5f9' }}
-                      content={({ active, payload }) => {
-                        if (active && payload && payload.length) {
-                          return (
-                            <div className="bg-white border-2 border-slate-900 p-2 shadow-[2px_2px_0px_0px_rgba(15,23,42,1)] rounded-lg">
-                              <p className="text-[10px] font-bold uppercase text-slate-500">{payload[0].payload.name}</p>
-                              <p className="font-serif font-bold text-sm text-slate-900">{payload[0].value} kWh</p>
-                            </div>
-                          );
-                        }
-                        return null;
-                      }}
-                    />
-                    <Bar dataKey="usage" radius={[4, 4, 0, 0]}>
-                      {chartData.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={entry.usage > 35 ? '#0f172a' : '#94a3b8'} stroke="#0f172a" strokeWidth={2} />
-                      ))}
-                    </Bar>
-                  </BarChart>
-                </ResponsiveContainer>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
+        <Card className="p-4 bg-[#121824]">
+          <div className="flex items-center justify-between text-slate-400 mb-2">
+            <span className="text-xs uppercase tracking-wider font-medium">Calculated Cost</span>
+            <FileText size={15} className="text-slate-300" />
+          </div>
+          <p className="text-2xl font-bold font-mono text-slate-100">
+            ₹{summary?.estimatedBill?.toFixed(2) || '3,840.00'}
+          </p>
+          <p className="text-[11px] text-slate-400 mt-2">Based on ₹8.00/kWh tariff model</p>
+        </Card>
 
-        {/* Right Col: Cost Breakdown & Suggestions */}
-        <div className="space-y-6">
-          <Card className="bg-[#1a2a3a] text-white border-slate-950">
-            <CardHeader>
-              <CardTitle className="text-white">Cost Breakdown</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex justify-between items-center text-sm border-b border-slate-700 pb-2">
-                <span className="text-slate-400 font-medium">Energy Charges</span>
-                <span className="font-serif font-bold">₹7,840.00</span>
-              </div>
-              <div className="flex justify-between items-center text-sm border-b border-slate-700 pb-2">
-                <span className="text-slate-400 font-medium">Fixed Network Fee</span>
-                <span className="font-serif font-bold">₹150.00</span>
-              </div>
-              <div className="flex justify-between items-center text-sm border-b border-slate-700 pb-2">
-                <span className="text-slate-400 font-medium">Taxes (5%)</span>
-                <span className="font-serif font-bold">₹399.50</span>
-              </div>
-              <div className="flex justify-between items-center text-lg pt-2 text-yellow-400">
-                <span className="font-bold">Total Estimated</span>
-                <span className="font-serif font-bold">₹8,389.50</span>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Clock size={16} />
-                Peak Usage Hours
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="p-4 rounded-xl border-2 border-orange-900 bg-orange-50 text-orange-900 flex items-center justify-between">
-                <div>
-                  <span className="text-[10px] font-bold uppercase tracking-wider block mb-1">Concentrated Load</span>
-                  <p className="font-serif font-bold text-xl">{reportData.peakHours}</p>
-                </div>
-                <AlertTriangle size={24} className="opacity-70" />
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Lightbulb size={16} />
-                Suggestions
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <div className="p-3 bg-slate-50 border-2 border-slate-200 rounded-lg text-xs leading-relaxed">
-                <strong className="block text-slate-900 mb-1">Shift HVAC Usage</strong>
-                Cooling spaces before 4 PM can reduce load during peak tariff hours, saving ~5% overall.
-              </div>
-              <div className="p-3 bg-slate-50 border-2 border-slate-200 rounded-lg text-xs leading-relaxed">
-                <strong className="block text-slate-900 mb-1">Phantom Loads</strong>
-                Your entertainment center is drawing 45W while on standby. Consider a smart power strip.
-              </div>
-            </CardContent>
-          </Card>
-        </div>
+        <Card className="p-4 bg-[#121824]">
+          <div className="flex items-center justify-between text-slate-400 mb-2">
+            <span className="text-xs uppercase tracking-wider font-medium">Device Scope</span>
+            <BarChart3 size={15} className="text-slate-300" />
+          </div>
+          <p className="text-2xl font-bold font-mono text-slate-100">
+            {devices.length} <span className="text-xs font-sans text-slate-400">appliances</span>
+          </p>
+          <p className="text-[11px] text-slate-400 mt-2">Active sensors reporting telemetry</p>
+        </Card>
 
       </div>
+
+      {/* Chart Visual */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Interval Power Breakdown</CardTitle>
+          <CardDescription>Telemetry consumption trend for {reportType} report scope</CardDescription>
+        </CardHeader>
+        <CardContent className="h-64">
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+              <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" opacity={0.6} />
+              <XAxis dataKey="name" stroke="#64748b" fontSize={11} tickLine={false} />
+              <YAxis stroke="#64748b" fontSize={11} tickLine={false} />
+              <RechartsTooltip 
+                contentStyle={{ backgroundColor: '#0d121d', borderColor: '#1e293b', borderRadius: '8px', color: '#f8fafc', fontSize: '12px' }}
+              />
+              <Bar dataKey="usage" name="Power Consumption" fill="#38bdf8" radius={[4, 4, 0, 0]} unit=" kW" />
+            </BarChart>
+          </ResponsiveContainer>
+        </CardContent>
+      </Card>
+
+      {/* Appliance Breakdown Data Table */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Appliance Audit Table</CardTitle>
+          <CardDescription>Individual device consumption summary</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-xs">
+              <thead className="bg-[#0d121d] border-b border-[#1e293b] text-slate-400 uppercase font-medium">
+                <tr>
+                  <th className="p-3">Appliance</th>
+                  <th className="p-3">Location</th>
+                  <th className="p-3">Category</th>
+                  <th className="p-3">Rated Power</th>
+                  <th className="p-3">Est. Monthly Cost</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-[#1e293b] text-slate-200">
+                {devices.map(d => {
+                  const estMonthly = Math.round((d.powerDraw * 8 * 30 * 8.0) / 1000);
+                  return (
+                    <tr key={d.id} className="hover:bg-[#182236] transition-colors">
+                      <td className="p-3 font-semibold text-slate-100">{d.name}</td>
+                      <td className="p-3 text-slate-300">{d.roomId}</td>
+                      <td className="p-3 font-mono text-slate-400 text-[11px]">{d.type}</td>
+                      <td className="p-3 font-mono font-bold text-slate-100">{d.powerDraw} W</td>
+                      <td className="p-3 font-mono text-slate-200">₹{estMonthly.toLocaleString()}</td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </CardContent>
+      </Card>
+
     </div>
   );
 }

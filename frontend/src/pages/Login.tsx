@@ -23,7 +23,7 @@ export default function Login() {
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Post-login power-up animation state
+  // Post-login animation state
   const [showBootAnim, setShowBootAnim] = useState(false);
   const [bootProgress, setBootProgress] = useState(0);
   const [bootStatus, setBootStatus] = useState('CONNECTING SYSTEM...');
@@ -42,7 +42,6 @@ export default function Login() {
     },
   });
 
-  // Boot progress ticker — only runs when showBootAnim is true
   useEffect(() => {
     if (!showBootAnim) return;
 
@@ -55,31 +54,27 @@ export default function Login() {
         const increment = Math.floor(Math.random() * 15) + 8;
         return Math.min(prev + increment, 100);
       });
-    }, 250);
+    }, 200);
 
     return () => clearInterval(interval);
   }, [showBootAnim]);
 
-  // Update status text based on progress
   useEffect(() => {
-    if (bootProgress < 25) {
-      setBootStatus('CONNECTING TO LOCAL SUBSTATION [0x4A]...');
-    } else if (bootProgress < 50) {
-      setBootStatus('SYNCHRONIZING DIGITAL ENERGY CORES...');
-    } else if (bootProgress < 75) {
-      setBootStatus('CALIBRATING VOLTAGE REGULATORS (240V)...');
-    } else if (bootProgress < 100) {
-      setBootStatus('SECURE TELEMETRY LINK ESTABLISHED...');
+    if (bootProgress < 30) {
+      setBootStatus('AUTHENTICATING TELEMETRY CHANNEL...');
+    } else if (bootProgress < 60) {
+      setBootStatus('SYNCHRONIZING APPLIANCE MONITORS...');
+    } else if (bootProgress < 90) {
+      setBootStatus('FETCHING REAL-TIME TARIFF DATA...');
     } else {
-      setBootStatus('GRID IS ACTIVE. SECURE ACCESS DEPLOYED.');
+      setBootStatus('SESSION VERIFIED. OPENING DASHBOARD...');
     }
   }, [bootProgress]);
 
-  // Navigate to dashboard once boot animation finishes
   useEffect(() => {
     if (bootProgress >= 100 && showBootAnim) {
-      const t1 = setTimeout(() => setBootExiting(true), 600);
-      const t2 = setTimeout(() => navigate('/dashboard', { replace: true }), 1300);
+      const t1 = setTimeout(() => setBootExiting(true), 400);
+      const t2 = setTimeout(() => navigate('/dashboard', { replace: true }), 900);
       return () => {
         clearTimeout(t1);
         clearTimeout(t2);
@@ -93,95 +88,79 @@ export default function Login() {
     try {
       const success = await login(data.email, data.password);
       if (success) {
-        // Trigger the boot animation instead of navigating immediately
         setShowBootAnim(true);
       } else {
-        setErrorMsg('Invalid email or password. Hint: Use any email and a password of at least 6 characters.');
+        setErrorMsg('Invalid credentials. (Hint: Use any email and password with 6+ characters).');
       }
     } catch (err) {
-      setErrorMsg('An unexpected error occurred. Please try again.');
+      setErrorMsg('An error occurred during authentication.');
     } finally {
       setIsSubmitting(false);
     }
   };
 
   return (
-    <div className="relative min-h-screen flex items-center justify-center bg-[#f4f1ea] overflow-hidden px-4 font-sans text-slate-900">
+    <div className="relative min-h-screen flex items-center justify-center bg-[#090d14] px-4 font-sans text-slate-100">
       
-      {/* Simple dot grid background */}
-      <div className="absolute inset-0 opacity-5 pointer-events-none">
-        <div className="absolute inset-0" style={{ backgroundImage: 'radial-gradient(#000 1px, transparent 1px)', backgroundSize: '16px 16px' }} />
-      </div>
-
-      {/* ═══════ Post-Login Power-Up Animation Overlay ═══════ */}
+      {/* Power-Up Animation Overlay */}
       {showBootAnim && (
         <div 
-          className={`absolute inset-0 bg-[#f4f1ea] z-50 flex flex-col items-center justify-center transition-all duration-700 ease-in-out ${
-            bootExiting ? 'opacity-0 -translate-y-full' : 'opacity-100 translate-y-0'
+          className={`absolute inset-0 bg-[#090d14] z-50 flex flex-col items-center justify-center transition-all duration-500 ease-in-out ${
+            bootExiting ? 'opacity-0 scale-95' : 'opacity-100 scale-100'
           }`}
         >
-          <div className="w-full max-w-sm px-6 text-center space-y-6">
-            <div>
-              <img src={poweriqLogo} alt="PowerIQ" className="h-20 w-auto object-contain mx-auto mix-blend-darken" />
-            </div>
+          <div className="w-full max-w-sm px-6 text-center space-y-5">
+            <img src={poweriqLogo} alt="PowerIQ" className="h-12 w-auto object-contain mx-auto brightness-110" />
 
-            {/* Retro segmented battery meter */}
-            <div className="p-4 bg-white border-2 border-slate-900 rounded-xl shadow-[3px_3px_0px_0px_rgba(15,23,42,1)]">
-              <div className="flex gap-1.5 justify-center">
-                {[...Array(5)].map((_, idx) => {
-                  const isActive = bootProgress >= (idx + 1) * 20;
-                  return (
-                    <div 
-                      key={idx}
-                      className={`w-7 h-10 border-2 border-slate-900 transition-all duration-200 ${
-                        isActive ? 'bg-[#1a2a3a] shadow-[1.5px_1.5px_0px_0px_#c5a059]' : 'bg-slate-100'
-                      }`}
-                    />
-                  );
-                })}
+            <div className="p-4 bg-[#121824] border border-[#1e293b] rounded-xl space-y-3">
+              <div className="w-full bg-[#090d14] h-2 rounded-full overflow-hidden border border-[#1e293b]">
+                <div 
+                  className="bg-slate-200 h-full transition-all duration-200" 
+                  style={{ width: `${bootProgress}%` }}
+                />
               </div>
 
-              <div className="mt-4 flex items-center justify-between font-mono text-[10px] font-bold text-slate-900 uppercase tracking-widest px-2">
-                <span>GRID LOAD</span>
-                <span className="text-[#c5a059]">{bootProgress}%</span>
+              <div className="flex items-center justify-between text-xs font-mono text-slate-400">
+                <span>CONNECTING</span>
+                <span className="text-slate-200 font-bold">{bootProgress}%</span>
               </div>
             </div>
 
-            <p className="text-[8px] font-bold font-mono text-slate-500 uppercase tracking-widest leading-none h-4">
+            <p className="text-xs font-mono text-slate-400">
               {bootStatus}
             </p>
           </div>
         </div>
       )}
 
-      {/* ═══════ Main Sign-In Form ═══════ */}
-      <div className="w-full max-w-md z-10">
+      {/* Main Sign-In Form */}
+      <div className="w-full max-w-sm z-10 space-y-6">
         
         {/* Logo */}
-        <div className="flex flex-col items-center justify-center text-center mb-6">
-          <img src={poweriqLogo} alt="PowerIQ" className="h-24 w-auto object-contain mb-1 mix-blend-darken" />
-          <p className="text-slate-600 text-xs font-semibold mt-1.5 max-w-xs leading-relaxed uppercase tracking-wider">
-            Enterprise Smart Energy Analytics
+        <div className="flex flex-col items-center text-center">
+          <img src={poweriqLogo} alt="PowerIQ" className="h-10 w-auto object-contain mb-2 brightness-110" />
+          <p className="text-slate-400 text-xs">
+            Smart Energy & Device Telemetry
           </p>
         </div>
 
-        {/* Login Panel */}
-        <div className="bg-white border-2 border-slate-900 rounded-2xl p-8 shadow-[4px_4px_0px_0px_rgba(15,23,42,1)] relative">
-          <h2 className="text-sm font-bold uppercase tracking-wider text-slate-500 mb-6 text-left">Sign In</h2>
+        {/* Login Card */}
+        <div className="bg-[#121824] border border-[#1e293b] rounded-xl p-6 space-y-5 shadow-xl">
+          <h2 className="text-sm font-semibold text-slate-200">Sign In to PowerIQ</h2>
 
           {errorMsg && (
-            <div className="mb-5 p-3 rounded-lg bg-rose-50 border-2 border-rose-900 text-rose-900 text-xs flex items-start gap-2.5 font-bold uppercase tracking-wide">
+            <div className="p-3 rounded-lg bg-rose-950/40 border border-rose-900/60 text-rose-300 text-xs flex items-start gap-2">
               <AlertTriangle size={15} className="shrink-0 mt-0.5" />
               <span>{errorMsg}</span>
             </div>
           )}
 
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
             <Input
               id="email"
               label="Email Address"
               type="email"
-              placeholder="e.g. john@poweriq.com"
+              placeholder="name@domain.com"
               leftIcon={<Mail size={15} />}
               error={errors.email?.message}
               {...register('email')}
@@ -197,19 +176,15 @@ export default function Login() {
               {...register('password')}
             />
 
-            <div className="flex items-center justify-between text-[9px] font-bold uppercase tracking-wider pt-1">
-              <label className="flex items-center gap-2 text-slate-500 cursor-pointer select-none">
+            <div className="flex items-center justify-between text-xs pt-1">
+              <label className="flex items-center gap-2 text-slate-400 cursor-pointer select-none">
                 <input
                   type="checkbox"
-                  className="w-4 h-4 rounded bg-white border border-slate-200 text-[#c5a059] focus:ring-[#c5a059]/20 accent-[#c5a059]"
+                  className="w-3.5 h-3.5 rounded bg-[#0d121d] border-[#1e293b] text-slate-200 focus:ring-0"
                   {...register('rememberMe')}
                 />
-                <span>Remember me</span>
+                <span>Remember session</span>
               </label>
-              
-              <a href="#forgot" className="text-[#c5a059] hover:text-[#b08c45] hover:underline font-bold transition-colors">
-                Forgot?
-              </a>
             </div>
 
             <Button
@@ -218,16 +193,15 @@ export default function Login() {
               className="w-full py-2.5 mt-2"
               isLoading={isSubmitting}
             >
-              Access Dashboard
+              Sign In
             </Button>
           </form>
         </div>
 
-        {/* Footer actions */}
-        <p className="text-center text-[10px] font-bold uppercase tracking-wider text-slate-500 mt-6">
-          Don't have an account?{' '}
-          <Link to="/register" className="text-[#c5a059] hover:underline hover:text-[#b08c45] transition-colors">
-            Request credentials
+        <p className="text-center text-xs text-slate-400">
+          Need an account?{' '}
+          <Link to="/register" className="text-slate-200 hover:underline font-medium">
+            Register now
           </Link>
         </p>
 

@@ -1,106 +1,111 @@
 @import "tailwindcss";
 
 @theme {
-  --color-enterprise-950: #f4f1ea; /* Warm beige background */
-  --color-enterprise-900: #faf9f5; /* Warm ivory panel */
-  --color-enterprise-850: #ffffff; /* pure white */
-  --color-enterprise-800: #0f172a; /* Slate 900 text */
-  --color-enterprise-700: #1e293b;
-  --color-enterprise-600: #475569;
-  --color-enterprise-primary: #1a2a3a; /* Midnight Indigo */
-  --color-enterprise-secondary: #c5a059; /* Champagne Brass */
+  --color-enterprise-950: #090d14; /* Deep matte charcoal/slate */
+  --color-enterprise-900: #121824; /* Muted surface panel */
+  --color-enterprise-850: #1a2234; /* Elevated panel */
+  --color-enterprise-800: #f8fafc; /* Crisp text header */
+  --color-enterprise-700: #cbd5e1; /* Body text */
+  --color-enterprise-600: #64748b; /* Muted caption */
+  --color-enterprise-primary: #3b82f6; /* Lowkey slate blue */
+  --color-enterprise-secondary: #0ea5e9; /* Lowkey cyan-teal */
   
-  --font-serif: 'EB Garamond', serif;
-  --font-sans: 'Inter', sans-serif;
-}
-
-@utility font-serif {
-  font-family: 'EB Garamond', serif;
+  --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+  --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
 }
 
 @utility font-sans {
-  font-family: 'Inter', sans-serif;
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
 }
 
-@utility editorial-card {
-  background-color: #ffffff;
-  border: 2px solid #0f172a;
+@utility font-mono {
+  font-family: 'JetBrains Mono', 'Fira Code', monospace;
+}
+
+/* Lowkey clean card style */
+@utility lowkey-card {
+  background-color: #121824;
+  border: 1px solid #1e293b;
   border-radius: 12px;
-  box-shadow: 2px 2px 0px 0px rgba(15, 23, 42, 1);
-  transition: all 0.15s ease-in-out;
+  transition: border-color 0.2s ease, background-color 0.2s ease;
 }
 
-@utility editorial-card-hover {
+@utility lowkey-card-hover {
   &:hover {
-    transform: translate(-1px, -1px);
-    box-shadow: 3px 3px 0px 0px rgba(15, 23, 42, 1);
+    border-color: #334155;
+    background-color: #161e2e;
   }
 }
 
-@utility editorial-btn {
-  border: 2px solid #0f172a;
-  box-shadow: 2px 2px 0px 0px rgba(15, 23, 42, 1);
+@utility lowkey-btn {
+  border: 1px solid #334155;
+  border-radius: 8px;
+  background-color: #1a2234;
+  color: #f8fafc;
   transition: all 0.15s ease-in-out;
   
+  &:hover {
+    background-color: #242f44;
+    border-color: #475569;
+  }
+  
   &:active {
-    transform: translate(1px, 1px);
-    box-shadow: 1px 1px 0px 0px rgba(15, 23, 42, 1);
+    transform: translateY(1px);
   }
   
   &:disabled {
-    opacity: 0.5;
+    opacity: 0.4;
     cursor: not-allowed;
     transform: none;
-    box-shadow: none;
   }
 }
 
-@utility editorial-input {
-  background-color: #ffffff;
-  border: 2px solid #0f172a;
+@utility lowkey-input {
+  background-color: #0d121d;
+  border: 1px solid #1e293b;
   border-radius: 8px;
-  transition: all 0.15s ease-in-out;
+  color: #f8fafc;
+  transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
   
   &:focus {
     outline: none;
-    box-shadow: 2px 2px 0px 0px rgba(15, 23, 42, 1);
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 1px #3b82f6;
   }
 }
 
-/* Custom editorial scrollbars */
+/* Custom sleek dark scrollbars */
 ::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+  width: 6px;
+  height: 6px;
 }
 
 ::-webkit-scrollbar-track {
-  background: #f4f1ea;
-  border-left: 2px solid #0f172a;
+  background: #090d14;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #0f172a;
-  border: 2px solid #f4f1ea;
-  border-radius: 4px;
+  background: #1e293b;
+  border-radius: 3px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #c5a059;
+  background: #334155;
 }
 
 body {
-  background-color: #f4f1ea; /* Warm beige background */
-  color: #0f172a; /* Slate 900 text */
-  font-family: 'Inter', sans-serif;
+  background-color: #090d14;
+  color: #e2e8f0;
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
   -webkit-font-smoothing: antialiased;
 }
 
-@keyframes power-spark {
-  0%, 100% { transform: scale(0.95); opacity: 0.85; filter: drop-shadow(0 0 2px rgba(197, 160, 89, 0.15)); }
-  50% { transform: scale(1.1); opacity: 1; filter: drop-shadow(0 0 10px rgba(197, 160, 89, 0.7)); }
+/* Lowkey status dot pulse */
+@keyframes subtle-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
 }
 
-.spark-anim {
-  animation: power-spark 1.2s infinite ease-in-out;
+.anim-pulse-subtle {
+  animation: subtle-pulse 2.5s infinite ease-in-out;
 }
-

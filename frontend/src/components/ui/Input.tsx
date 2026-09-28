@@ -21,16 +21,16 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(({
   const inputType = isPassword ? (showPassword ? 'text' : 'password') : type;
 
   return (
-    <div className="w-full flex flex-col gap-1.5 text-left">
+    <div className="w-full flex flex-col gap-1 text-left">
       {label && (
-        <label htmlFor={id} className="text-[10px] font-bold text-slate-800 uppercase tracking-wider">
+        <label htmlFor={id} className="text-xs font-medium text-slate-300 tracking-wide">
           {label}
         </label>
       )}
       
       <div className="relative flex items-center">
         {leftIcon && (
-          <div className="absolute left-3 text-slate-500 flex items-center pointer-events-none">
+          <div className="absolute left-3 text-slate-400 flex items-center pointer-events-none">
             {leftIcon}
           </div>
         )}
@@ -39,12 +39,12 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(({
           ref={ref}
           id={id}
           type={inputType}
-          className={`w-full bg-white border-2 text-xs text-slate-900 placeholder:text-slate-400 rounded-lg py-2.5 transition-all duration-150 outline-none
-            ${leftIcon ? 'pl-9' : 'pl-3.5'}
-            ${isPassword ? 'pr-9' : 'pr-3.5'}
+          className={`w-full bg-[#0d121d] border text-xs text-slate-100 placeholder:text-slate-500 rounded-lg py-2 transition-all duration-150 outline-none
+            ${leftIcon ? 'pl-9' : 'pl-3'}
+            ${isPassword ? 'pr-9' : 'pr-3'}
             ${error 
-              ? 'border-rose-600 focus:shadow-[2px_2px_0px_0px_rgba(153,27,27,1)]' 
-              : 'border-slate-900 focus:shadow-[2px_2px_0px_0px_rgba(15,23,42,1)]'
+              ? 'border-rose-500/80 focus:border-rose-500 focus:ring-1 focus:ring-rose-500' 
+              : 'border-[#1e293b] focus:border-slate-400 focus:ring-1 focus:ring-slate-400'
             }
             ${className}
           `}
@@ -55,15 +55,15 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(({
           <button
             type="button"
             onClick={() => setShowPassword(!showPassword)}
-            className="absolute right-3 text-slate-400 hover:text-slate-700 flex items-center"
+            className="absolute right-3 text-slate-400 hover:text-slate-200 flex items-center"
           >
-            {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+            {showPassword ? <EyeOff size={15} /> : <Eye size={15} />}
           </button>
         )}
       </div>
 
       {error && (
-        <p className="text-[10px] text-rose-700 mt-0.5 font-bold tracking-wide">
+        <p className="text-[11px] text-rose-400 mt-0.5 font-normal">
           {error}
         </p>
       )}
