@@ -3,10 +3,8 @@ import {
   Calendar, 
   DollarSign, 
   TrendingUp, 
-  AlertOctagon, 
   Activity, 
   CheckCircle,
-  Clock,
   ArrowRight,
   TrendingDown,
   Cpu

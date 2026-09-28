@@ -3,7 +3,6 @@ import { useDevices } from '../context/DeviceContext';
 import { 
   TrendingDown, 
   Lightbulb, 
-  Activity,
   Zap,
   BarChart2
 } from 'lucide-react';
@@ -11,8 +10,6 @@ import {
   ResponsiveContainer, 
   AreaChart, 
   Area, 
-  BarChart, 
-  Bar, 
   PieChart, 
   Pie, 
   Cell, 

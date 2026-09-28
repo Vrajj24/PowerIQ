@@ -10,11 +10,10 @@ import {
   Edit3, 
   Trash2, 
   Cpu,
-  Zap,
   Power
 } from 'lucide-react';
 import { useDevices } from '../context/DeviceContext';
-import type { Device, DeviceStatus } from '../types';
+import type { Device } from '../types';
 import { Card } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
@@ -75,15 +74,6 @@ export default function Devices() {
     defaultValues: { name: '', roomId: 'Living Room', type: 'HVAC', powerDraw: 2000, status: 'offline' }
   });
 
-  const handleTypeChange = (typeKey: string) => {
-    setSelectedTypeKey(typeKey);
-    const preset = DEVICE_PRESETS[typeKey];
-    if (preset) {
-      setAddValue('type', typeKey);
-      setAddValue('powerDraw', preset.watts);
-    }
-  };
-
   const {
     register: regEdit,
     handleSubmit: handleEditSubmit,
@@ -92,6 +82,15 @@ export default function Devices() {
   } = useForm<DeviceFormValues>({
     resolver: zodResolver(deviceSchema) as any
   });
+
+  const handleTypeChange = (typeKey: string) => {
+    setSelectedTypeKey(typeKey);
+    const preset = DEVICE_PRESETS[typeKey];
+    if (preset) {
+      setAddValue('type', typeKey);
+      setAddValue('powerDraw', preset.watts);
+    }
+  };
 
   const onAddDeviceSubmit = (data: DeviceFormValues) => {
     addDevice(data);
@@ -171,7 +170,7 @@ export default function Devices() {
               placeholder="Search appliances, rooms..." 
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full bg-[#0d121d] border border-[#1e293b] rounded-lg pl-9 pr-3 py-1.5 text-xs text-slate-100 placeholder:text-slate-500 focus:outline-none focus:border-slate-400 transition-all"
+              className="w-full bg-[#0d121d] border border-[#1e293b] rounded-lg pl-9 pr-3 py-1.5 text-xs text-slate-100 placeholder:text-slate-500 outline-none focus:border-slate-400 transition-all"
             />
           </div>
 
@@ -395,6 +394,43 @@ export default function Devices() {
           <div className="flex justify-end gap-2 pt-2">
             <Button type="button" variant="outline" onClick={() => setIsAddOpen(false)}>Cancel</Button>
             <Button type="submit" variant="primary">Add Device</Button>
+          </div>
+        </form>
+      </Modal>
+
+      {/* Edit Device Modal */}
+      <Modal isOpen={Boolean(editingDevice)} onClose={() => setEditingDevice(null)} title="Edit Appliance">
+        <form onSubmit={handleEditSubmit(onEditDeviceSubmit)} className="space-y-4">
+          <Input 
+            id="editName" 
+            label="Appliance Name" 
+            error={errorsEdit.name?.message}
+            {...regEdit('name')} 
+          />
+
+          <div className="flex flex-col gap-1 text-left">
+            <label className="text-xs font-medium text-slate-300">Room Location</label>
+            <select 
+              {...regEdit('roomId')}
+              className="bg-[#0d121d] border border-[#1e293b] rounded-lg p-2 text-xs text-slate-100 outline-none"
+            >
+              {['Living Room', 'Master Bedroom', 'Bedroom 2', 'Kitchen', 'Bathroom', 'Laundry', 'Garage', 'Office'].map(r => (
+                <option key={r} value={r}>{r}</option>
+              ))}
+            </select>
+          </div>
+
+          <Input 
+            id="editPowerDraw" 
+            label="Rated Power (Watts)" 
+            type="number"
+            error={errorsEdit.powerDraw?.message}
+            {...regEdit('powerDraw')} 
+          />
+
+          <div className="flex justify-end gap-2 pt-2">
+            <Button type="button" variant="outline" onClick={() => setEditingDevice(null)}>Cancel</Button>
+            <Button type="submit" variant="primary">Save Changes</Button>
           </div>
         </form>
       </Modal>

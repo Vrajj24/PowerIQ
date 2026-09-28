@@ -13,7 +13,6 @@ import { Button } from '../components/ui/Button';
 
 export default function Alerts() {
   const { alerts, markAlertRead, markAllAlertsRead } = useDevices();
-  const [filterCategory, setFilterCategory] = useState<string>('all');
   const [filterStatus, setFilterStatus] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState<string>('');
 
@@ -35,11 +34,11 @@ export default function Alerts() {
   };
 
   const filteredAlerts = alerts.filter(alert => {
-    const matchesCategory = filterCategory === 'all' || alert.category === filterCategory;
     const matchesStatus = filterStatus === 'all' || (filterStatus === 'read' ? alert.read : !alert.read);
+    const titleText = alert.title || alert.message || '';
     const matchesSearch = alert.message.toLowerCase().includes(searchQuery.toLowerCase()) || 
-                          alert.title.toLowerCase().includes(searchQuery.toLowerCase());
-    return matchesCategory && matchesStatus && matchesSearch;
+                          titleText.toLowerCase().includes(searchQuery.toLowerCase());
+    return matchesStatus && matchesSearch;
   });
 
   const unreadCount = alerts.filter(a => !a.read).length;
@@ -104,15 +103,15 @@ export default function Alerts() {
             <div 
               key={alert.id}
               onClick={() => markAlertRead(alert.id)}
-              className={`p-4 rounded-xl border transition-all cursor-pointer flex items-start gap-3.5 ${getAlertStyle(alert.severity, alert.read)}`}
+              className={`p-4 rounded-xl border transition-all cursor-pointer flex items-start gap-3.5 ${getAlertStyle(alert.severity || 'info', alert.read)}`}
             >
-              {getAlertIcon(alert.severity)}
+              {getAlertIcon(alert.severity || 'info')}
               
               <div className="flex-1 space-y-1">
                 <div className="flex items-center justify-between">
                   <h4 className="text-xs font-semibold text-slate-100 flex items-center gap-2">
                     {!alert.read && <span className="w-1.5 h-1.5 rounded-full bg-rose-500" />}
-                    <span>{alert.title}</span>
+                    <span>{alert.title || 'Notification'}</span>
                   </h4>
                   <span className="text-[10px] font-mono text-slate-400 flex items-center gap-1">
                     <Clock size={11} />

@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowRight, Zap, Shield, Cpu, Activity, Sliders, CheckCircle2, ChevronRight, BarChart2 } from 'lucide-react';
+import { ArrowRight, Zap, Shield, Activity, Sliders, CheckCircle2, ChevronRight } from 'lucide-react';
 import poweriqLogo from '../assets/poweriq-logo.png';
 
 interface InteractiveDevice {

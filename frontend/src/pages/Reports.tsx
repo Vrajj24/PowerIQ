@@ -8,8 +8,7 @@ import {
   FileText, 
   Download, 
   Zap,
-  BarChart3,
-  Calendar
+  BarChart3
 } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer } from 'recharts';
 
