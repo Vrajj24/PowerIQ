@@ -46,7 +46,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       localStorage.setItem('poweriq_user', JSON.stringify(res.user));
       return true;
     } catch (e) {
-      return false;
+      setUser(null);
+      setIsAuthenticated(false);
+      throw e;
     } finally {
       setIsLoading(false);
     }
@@ -62,7 +64,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       localStorage.setItem('poweriq_user', JSON.stringify(res.user));
       return true;
     } catch (e) {
-      return false;
+      setUser(null);
+      setIsAuthenticated(false);
+      throw e;
     } finally {
       setIsLoading(false);
     }

@@ -1,9 +1,9 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { User, Mail, Lock, AlertTriangle } from 'lucide-react';
+import { User, Mail, Lock, AlertCircle } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import poweriqLogo from '../assets/poweriq-logo.png';
 import { Button } from '../components/ui/Button';
@@ -22,10 +22,17 @@ const registerSchema = z.object({
 type RegisterFormValues = z.infer<typeof registerSchema>;
 
 export default function Register() {
-  const { register: authRegister } = useAuth();
+  const { register: authRegister, isAuthenticated } = useAuth();
   const navigate = useNavigate();
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // If already authenticated, redirect to dashboard immediately
+  useEffect(() => {
+    if (isAuthenticated) {
+      navigate('/dashboard', { replace: true });
+    }
+  }, [isAuthenticated, navigate]);
 
   const {
     register,
@@ -47,12 +54,13 @@ export default function Register() {
     try {
       const success = await authRegister(data.name, data.email, data.password);
       if (success) {
-        navigate('/dashboard');
+        navigate('/dashboard', { replace: true });
       } else {
         setErrorMsg('Registration failed. Please verify your details.');
       }
-    } catch (err) {
-      setErrorMsg('An unexpected error occurred. Please try again.');
+    } catch (err: any) {
+      const msg = err?.message || 'An unexpected error occurred during registration.';
+      setErrorMsg(msg);
     } finally {
       setIsSubmitting(false);
     }
@@ -75,9 +83,12 @@ export default function Register() {
           <h2 className="text-sm font-semibold text-slate-200">Register Account</h2>
 
           {errorMsg && (
-            <div className="p-3 rounded-lg bg-rose-950/40 border border-rose-900/60 text-rose-300 text-xs flex items-start gap-2">
-              <AlertTriangle size={15} className="shrink-0 mt-0.5" />
-              <span>{errorMsg}</span>
+            <div className="p-3.5 rounded-lg bg-rose-950/60 border border-rose-800 text-rose-200 text-xs flex items-start gap-2.5 animate-in fade-in">
+              <AlertCircle size={16} className="shrink-0 text-rose-400 mt-0.5" />
+              <div className="space-y-0.5">
+                <p className="font-semibold text-rose-300">Registration Error</p>
+                <p className="text-rose-200/90 text-[11px] leading-relaxed">{errorMsg}</p>
+              </div>
             </div>
           )}
 

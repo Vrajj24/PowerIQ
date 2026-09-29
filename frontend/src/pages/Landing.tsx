@@ -1,60 +1,38 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowRight, Zap, Shield, Activity, Sliders, CheckCircle2, ChevronRight } from 'lucide-react';
+import { ArrowRight, CheckCircle2, ChevronRight, Activity, Zap, Cpu, Gauge, Layers, Shield } from 'lucide-react';
 import poweriqLogo from '../assets/poweriq-logo.png';
 
-interface InteractiveDevice {
+interface ApplianceNode {
   id: string;
   name: string;
   room: string;
-  watts: number;
-  active: boolean;
-  category: string;
+  kw: number;
+  costPerHour: number;
+  status: 'active' | 'standby' | 'idle';
+  color: string;
 }
 
-const INITIAL_SIMULATOR_DEVICES: InteractiveDevice[] = [
-  { id: 'ac', name: '1.5T Inverter AC', room: 'Living Room', watts: 2100, active: true, category: 'HVAC' },
-  { id: 'geyser', name: 'Storage Geyser (25L)', room: 'Master Bath', watts: 2000, active: false, category: 'Water Heater' },
-  { id: 'fridge', name: 'Double Door Fridge', room: 'Kitchen', watts: 160, active: true, category: 'Refrigeration' },
-  { id: 'wm', name: 'Front Load Washer', room: 'Laundry', watts: 2200, active: true, category: 'Laundry' },
-  { id: 'ev', name: 'Level 2 EV Charger', room: 'Garage', watts: 7200, active: false, category: 'EV Charging' },
-  { id: 'workstation', name: 'Dual-Monitor PC', room: 'Study', watts: 380, active: true, category: 'Computing' },
+const TOPOLOGY_NODES: ApplianceNode[] = [
+  { id: 'hvac', name: '1.5T Inverter AC', room: 'Living Room', kw: 2.10, costPerHour: 16.80, status: 'active', color: 'bg-sky-500' },
+  { id: 'geyser', name: 'Storage Geyser (25L)', room: 'Master Bath', kw: 2.00, costPerHour: 16.00, status: 'active', color: 'bg-amber-500' },
+  { id: 'fridge', name: 'Double Door Refrigerator', room: 'Kitchen', kw: 0.16, costPerHour: 1.28, status: 'active', color: 'bg-emerald-500' },
+  { id: 'ev', name: 'Level 2 EV Charger', room: 'Garage', kw: 0.00, costPerHour: 0.00, status: 'standby', color: 'bg-slate-600' },
+  { id: 'pc', name: 'Dual-Monitor PC', room: 'Study', kw: 0.38, costPerHour: 3.04, status: 'active', color: 'bg-indigo-500' },
 ];
 
 export default function Landing() {
-  const [devices, setDevices] = useState<InteractiveDevice[]>(INITIAL_SIMULATOR_DEVICES);
-  const [tariffRate, setTariffRate] = useState<number>(8.0); // ₹8/kWh
-  const [calcHours, setCalcHours] = useState<number>(6);
-  const [calcWatts, setCalcWatts] = useState<number>(2000);
+  const [activeTab, setActiveTab] = useState<'topology' | 'distribution' | 'metrics'>('topology');
+  const [selectedNode, setSelectedNode] = useState<ApplianceNode>(TOPOLOGY_NODES[0]);
+  const [tariffRate, setTariffRate] = useState<number>(8.0);
+  const [calcHours, setCalcHours] = useState<number>(8);
+  const [calcWatts, setCalcWatts] = useState<number>(2100);
 
-  // Telemetry Packet Log Simulation
-  const [logs, setLogs] = useState<string[]>([
-    '11:45:01 · TELEMETRY_PKT · device_id=split_ac_01 · draw=2.10kW · v=231V · status=OK',
-    '11:45:00 · TELEMETRY_PKT · device_id=fridge_01 · draw=0.16kW · v=229V · status=OK',
-    '11:44:58 · TARIFF_ENGINE · current_rate=₹8.00/kWh · aggregate_load=4.84kW',
-  ]);
+  const totalKw = TOPOLOGY_NODES.reduce((sum, n) => n.status === 'active' ? sum + n.kw : sum, 0);
+  const activeCount = TOPOLOGY_NODES.filter(n => n.status === 'active').length;
+  const hourlyCost = totalKw * tariffRate;
+  const monthlyCostEst = Math.round(totalKw * 8 * 30 * tariffRate);
 
-  const toggleDevice = (id: string) => {
-    setDevices(prev => prev.map(d => d.id === id ? { ...d, active: !d.active } : d));
-    const dev = devices.find(d => d.id === id);
-    if (dev) {
-      const now = new Date().toLocaleTimeString();
-      const statusText = !dev.active ? 'POWER_ON' : 'POWER_OFF';
-      const drawText = !dev.active ? `${(dev.watts / 1000).toFixed(2)}kW` : '0.00kW';
-      setLogs(prev => [
-        `${now} · EVENT_${statusText} · device=${dev.id} · new_draw=${drawText}`,
-        ...prev.slice(0, 5)
-      ]);
-    }
-  };
-
-  const activeDevicesCount = devices.filter(d => d.active).length;
-  const totalWatts = devices.reduce((sum, d) => d.active ? sum + d.watts : sum, 0);
-  const totalKw = (totalWatts / 1000).toFixed(2);
-  const estimatedDailyKwh = (totalWatts * 8) / 1000; // assuming avg 8h run
-  const estimatedMonthlyBill = Math.round(estimatedDailyKwh * 30 * tariffRate);
-
-  // Calculator outputs
   const calcDailyKwh = (calcWatts * calcHours) / 1000;
   const calcMonthlyCost = Math.round(calcDailyKwh * 30 * tariffRate);
 
@@ -66,10 +44,6 @@ export default function Landing() {
         <div className="max-w-7xl mx-auto px-6 h-14 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <img src={poweriqLogo} alt="PowerIQ" className="h-8 w-auto object-contain brightness-110" />
-            <span className="hidden sm:inline-flex items-center gap-1.5 text-[11px] text-slate-400 bg-[#141b29] border border-[#222d42] rounded-full px-2.5 py-0.5 font-mono">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 anim-pulse-subtle" />
-              v2.4 Telemetry Engine
-            </span>
           </div>
 
           <div className="flex items-center gap-3">
@@ -89,29 +63,24 @@ export default function Landing() {
         </div>
       </nav>
 
-      {/* ── HERO SECTION: Live Interactive Console ────────────────────────────── */}
-      <section className="max-w-7xl mx-auto px-6 pt-12 pb-16">
+      {/* ── HERO SECTION ───────────────────────────────────────────── */}
+      <section className="max-w-7xl mx-auto px-6 pt-14 pb-16">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-center">
           
           {/* Hero Content Left */}
           <div className="lg:col-span-6 space-y-6">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-md bg-[#121824] border border-[#1e293b] text-xs text-slate-400 font-mono">
-              <Zap size={13} className="text-slate-300" />
-              <span>Device-level power telemetry & tariff intelligence</span>
-            </div>
-
-            <h1 className="text-3xl md:text-5xl font-bold tracking-tight text-slate-100 leading-tight">
+            <h1 className="text-3xl md:text-5xl font-bold tracking-tight text-slate-100 leading-[1.15]">
               Know exactly which appliance is inflating your electricity bill.
             </h1>
 
-            <p className="text-slate-400 text-sm leading-relaxed max-w-xl">
+            <p className="text-slate-400 text-sm leading-relaxed max-w-xl font-normal">
               PowerIQ monitors telemetry per device — calculating true hourly power draw and monthly rupee costs across every room. No estimated averages. Pure appliance transparency.
             </p>
 
             <div className="flex flex-wrap items-center gap-3 pt-2">
               <Link 
                 to="/register" 
-                className="inline-flex items-center gap-2 text-xs font-medium text-slate-950 bg-slate-100 hover:bg-white rounded-lg px-5 py-2.5 transition-all"
+                className="inline-flex items-center gap-2 text-xs font-medium text-slate-950 bg-slate-100 hover:bg-white rounded-lg px-5 py-2.5 transition-all shadow-sm"
               >
                 Start Monitoring Your Home <ArrowRight size={14} />
               </Link>
@@ -127,81 +96,198 @@ export default function Landing() {
             <div className="grid grid-cols-3 gap-4 pt-4 border-t border-[#1e293b] text-xs">
               <div>
                 <span className="text-slate-500 block text-[11px]">Sampling</span>
-                <span className="font-mono text-slate-200 font-medium">15-min Telemetry</span>
+                <span className="text-slate-200 font-medium">15-min Telemetry</span>
               </div>
               <div>
                 <span className="text-slate-500 block text-[11px]">Tariff Model</span>
-                <span className="font-mono text-slate-200 font-medium">₹/kWh Tiered</span>
+                <span className="text-slate-200 font-medium">₹/kWh Tiered</span>
               </div>
               <div>
                 <span className="text-slate-500 block text-[11px]">Isolation</span>
-                <span className="font-mono text-slate-200 font-medium">Per-User DB</span>
+                <span className="text-slate-200 font-medium">Per-User DB Scope</span>
               </div>
             </div>
           </div>
 
-          {/* Hero Interactive Console Right */}
+          {/* Hero Right: Modern Live Energy Topology Monitor */}
           <div className="lg:col-span-6">
             <div className="bg-[#121824] border border-[#1e293b] rounded-xl p-5 shadow-2xl space-y-4">
               
-              {/* Header of Interactive Console */}
+              {/* Card Header + View Switcher */}
               <div className="flex items-center justify-between border-b border-[#1e293b] pb-3">
                 <div className="flex items-center gap-2">
-                  <span className="w-2 h-2 rounded-full bg-emerald-500 anim-pulse-subtle" />
-                  <span className="text-xs font-semibold text-slate-200">Interactive Telemetry Console</span>
+                  <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                  <span className="text-xs font-semibold text-slate-200">Live Power Topology</span>
+                  <span className="text-[10px] font-mono text-emerald-400 bg-emerald-950/60 border border-emerald-800/60 px-1.5 py-0.5 rounded">{activeCount} Online</span>
                 </div>
-                <span className="text-[11px] font-mono text-slate-400">Click toggles to test live load</span>
+
+                <div className="flex gap-1 bg-[#0d121d] p-1 rounded-lg border border-[#1e293b]">
+                  <button
+                    onClick={() => setActiveTab('topology')}
+                    className={`px-2.5 py-1 text-[11px] font-medium rounded-md transition-all flex items-center gap-1.5 ${
+                      activeTab === 'topology' ? 'bg-[#1e293b] text-slate-100' : 'text-slate-400 hover:text-slate-200'
+                    }`}
+                  >
+                    <Layers size={12} /> Topology
+                  </button>
+                  <button
+                    onClick={() => setActiveTab('distribution')}
+                    className={`px-2.5 py-1 text-[11px] font-medium rounded-md transition-all flex items-center gap-1.5 ${
+                      activeTab === 'distribution' ? 'bg-[#1e293b] text-slate-100' : 'text-slate-400 hover:text-slate-200'
+                    }`}
+                  >
+                    <Activity size={12} /> Share
+                  </button>
+                  <button
+                    onClick={() => setActiveTab('metrics')}
+                    className={`px-2.5 py-1 text-[11px] font-medium rounded-md transition-all flex items-center gap-1.5 ${
+                      activeTab === 'metrics' ? 'bg-[#1e293b] text-slate-100' : 'text-slate-400 hover:text-slate-200'
+                    }`}
+                  >
+                    <Gauge size={12} /> Metrics
+                  </button>
+                </div>
               </div>
 
-              {/* Console KPI Metrics */}
-              <div className="grid grid-cols-3 gap-3 bg-[#0d121d] border border-[#1e293b] rounded-lg p-3 text-center">
+              {/* KPI Summary Banner */}
+              <div className="grid grid-cols-3 gap-3 bg-[#0d121d] border border-[#1e293b] rounded-lg p-3">
                 <div>
-                  <p className="text-[10px] text-slate-500 uppercase tracking-wider">Active Load</p>
-                  <p className="text-xl font-bold font-mono text-slate-100">{totalKw} <span className="text-xs text-slate-400 font-sans">kW</span></p>
+                  <p className="text-[10px] text-slate-500 uppercase tracking-wider font-medium">Total Load</p>
+                  <p className="text-xl font-bold font-mono text-slate-100 mt-0.5">{totalKw.toFixed(2)} <span className="text-xs font-sans font-normal text-slate-400">kW</span></p>
                 </div>
                 <div>
-                  <p className="text-[10px] text-slate-500 uppercase tracking-wider">Est. Monthly</p>
-                  <p className="text-xl font-bold font-mono text-slate-100">₹{estimatedMonthlyBill.toLocaleString()}</p>
+                  <p className="text-[10px] text-slate-500 uppercase tracking-wider font-medium">Hourly Cost</p>
+                  <p className="text-xl font-bold font-mono text-slate-100 mt-0.5">₹{hourlyCost.toFixed(2)}</p>
                 </div>
                 <div>
-                  <p className="text-[10px] text-slate-500 uppercase tracking-wider">Active Devices</p>
-                  <p className="text-xl font-bold font-mono text-slate-100">{activeDevicesCount} / {devices.length}</p>
+                  <p className="text-[10px] text-slate-500 uppercase tracking-wider font-medium">Est. Monthly</p>
+                  <p className="text-xl font-bold font-mono text-slate-100 mt-0.5">₹{monthlyCostEst.toLocaleString()}</p>
                 </div>
               </div>
 
-              {/* Interactive Device Switches Grid */}
-              <div className="space-y-2">
-                <p className="text-[11px] font-medium text-slate-400">Simulated Home Devices (Click to Toggle):</p>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                  {devices.map(d => (
-                    <button
-                      key={d.id}
-                      onClick={() => toggleDevice(d.id)}
-                      className={`flex items-center justify-between px-3 py-2 rounded-lg border text-left transition-all ${
-                        d.active 
-                          ? 'bg-[#182236] border-[#2b3a5a] text-slate-100' 
-                          : 'bg-[#090d14] border-[#182030] text-slate-500 hover:border-[#222d42]'
-                      }`}
-                    >
-                      <div>
-                        <p className="text-xs font-medium leading-tight">{d.name}</p>
-                        <p className="text-[10px] text-slate-400 font-mono mt-0.5">{d.room} · {(d.watts/1000).toFixed(2)}kW</p>
+              {/* TAB 1: TOPOLOGY MAP */}
+              {activeTab === 'topology' && (
+                <div className="space-y-3">
+                  <div className="bg-[#090d14] border border-[#1e293b] rounded-lg p-4 relative overflow-hidden">
+                    
+                    {/* SVG Flow Lines Background */}
+                    <svg className="absolute inset-0 w-full h-full pointer-events-none opacity-20" xmlns="http://www.w3.org/2000/svg">
+                      <line x1="15%" y1="20%" x2="85%" y2="20%" stroke="#38bdf8" strokeWidth="2" strokeDasharray="4" />
+                      <line x1="50%" y1="20%" x2="50%" y2="85%" stroke="#38bdf8" strokeWidth="2" strokeDasharray="4" />
+                    </svg>
+
+                    {/* Central Gateway Node */}
+                    <div className="flex items-center justify-between bg-[#121824] border border-[#2a3650] rounded-lg p-3 mb-4 shadow-md relative z-10">
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 rounded-lg bg-sky-950/60 border border-sky-800 flex items-center justify-center text-sky-400">
+                          <Zap size={16} />
+                        </div>
+                        <div>
+                          <p className="text-xs font-semibold text-slate-100">Main Service Grid Feed</p>
+                          <p className="text-[10px] text-slate-400 font-mono">231.4V AC · 50.0 Hz · Tariff ₹{tariffRate}/kWh</p>
+                        </div>
                       </div>
-                      <div className={`w-7 h-4 rounded-full p-0.5 transition-colors ${d.active ? 'bg-emerald-600' : 'bg-slate-700'}`}>
-                        <div className={`w-3 h-3 rounded-full bg-white transition-transform ${d.active ? 'translate-x-3' : 'translate-x-0'}`} />
-                      </div>
-                    </button>
-                  ))}
-                </div>
-              </div>
+                      <span className="text-[11px] font-semibold text-emerald-400 bg-emerald-950/40 border border-emerald-900/60 px-2.5 py-0.5 rounded">
+                        Active Stream
+                      </span>
+                    </div>
 
-              {/* Live Telemetry Log Output */}
-              <div className="bg-[#090d14] border border-[#1e293b] rounded-lg p-3 font-mono text-[10px] space-y-1 text-slate-400 max-h-24 overflow-hidden">
-                <p className="text-slate-500 border-b border-[#182030] pb-1 text-[9px] uppercase tracking-wider">Telemetry Packet Stream Log:</p>
-                {logs.map((log, i) => (
-                  <p key={i} className="truncate text-slate-300">{log}</p>
-                ))}
-              </div>
+                    {/* Appliance Branch Nodes List */}
+                    <div className="space-y-2 relative z-10">
+                      <p className="text-[11px] text-slate-400 font-medium">Discovered Appliance Nodes (Click to Inspect):</p>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                        {TOPOLOGY_NODES.map(node => (
+                          <button
+                            key={node.id}
+                            onClick={() => setSelectedNode(node)}
+                            className={`p-2.5 rounded-lg border text-left transition-all flex items-center justify-between ${
+                              selectedNode.id === node.id 
+                                ? 'bg-[#1a2538] border-[#38bdf8] shadow-sm' 
+                                : 'bg-[#121824] border-[#1e293b] hover:border-slate-700'
+                            }`}
+                          >
+                            <div className="flex items-center gap-2.5">
+                              <span className={`w-2 h-2 rounded-full ${node.status === 'active' ? 'bg-emerald-400 animate-pulse' : 'bg-slate-600'}`} />
+                              <div>
+                                <p className="text-xs font-medium text-slate-200">{node.name}</p>
+                                <p className="text-[10px] text-slate-400 font-mono">{node.room}</p>
+                              </div>
+                            </div>
+                            <div className="text-right">
+                              <p className="text-xs font-mono font-bold text-slate-100">{node.kw.toFixed(2)}kW</p>
+                              <p className="text-[10px] text-slate-400 font-mono">₹{node.costPerHour.toFixed(1)}/h</p>
+                            </div>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                  </div>
+
+                  {/* Selected Node Details Bar */}
+                  <div className="bg-[#0d121d] border border-[#1e293b] rounded-lg p-3 flex items-center justify-between text-xs">
+                    <div>
+                      <span className="text-slate-400">Inspecting Node: </span>
+                      <span className="font-semibold text-slate-100">{selectedNode.name}</span>
+                    </div>
+                    <div className="flex items-center gap-4 text-slate-300 font-mono">
+                      <span>{selectedNode.kw} kW</span>
+                      <span>₹{selectedNode.costPerHour.toFixed(2)}/hr</span>
+                      <span className="text-emerald-400 font-sans font-medium text-[11px]">Normal Load</span>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* TAB 2: DISTRIBUTION BARS */}
+              {activeTab === 'distribution' && (
+                <div className="bg-[#090d14] border border-[#1e293b] rounded-lg p-4 space-y-3">
+                  <p className="text-xs font-medium text-slate-300 mb-2">Live Appliance Load Percentage Share:</p>
+                  {TOPOLOGY_NODES.map(node => {
+                    const pct = totalKw > 0 ? Math.round((node.kw / totalKw) * 100) : 0;
+                    return (
+                      <div key={node.id} className="space-y-1">
+                        <div className="flex justify-between text-xs font-medium text-slate-300">
+                          <span>{node.name} ({node.room})</span>
+                          <span className="font-mono">{node.kw} kW ({pct}%)</span>
+                        </div>
+                        <div className="w-full h-2 bg-[#121824] rounded-full overflow-hidden border border-[#1e293b]">
+                          <div 
+                            className={`h-full ${node.color} transition-all duration-500`}
+                            style={{ width: `${pct}%` }}
+                          />
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+
+              {/* TAB 3: METRICS */}
+              {activeTab === 'metrics' && (
+                <div className="bg-[#090d14] border border-[#1e293b] rounded-lg p-4 grid grid-cols-2 gap-3 text-xs">
+                  <div className="bg-[#121824] border border-[#1e293b] rounded-lg p-3">
+                    <span className="text-slate-400 block text-[11px]">Power Factor</span>
+                    <span className="text-lg font-bold font-mono text-slate-100 mt-1 block">0.98 PF</span>
+                    <span className="text-[10px] text-emerald-400 mt-1 block">High Grid Efficiency</span>
+                  </div>
+                  <div className="bg-[#121824] border border-[#1e293b] rounded-lg p-3">
+                    <span className="text-slate-400 block text-[11px]">RMS Voltage</span>
+                    <span className="text-lg font-bold font-mono text-slate-100 mt-1 block">231.4 V</span>
+                    <span className="text-[10px] text-emerald-400 mt-1 block">Stable Supply</span>
+                  </div>
+                  <div className="bg-[#121824] border border-[#1e293b] rounded-lg p-3">
+                    <span className="text-slate-400 block text-[11px]">Current Draw</span>
+                    <span className="text-lg font-bold font-mono text-slate-100 mt-1 block">20.9 A</span>
+                    <span className="text-[10px] text-slate-400 mt-1 block">Aggregate Current</span>
+                  </div>
+                  <div className="bg-[#121824] border border-[#1e293b] rounded-lg p-3">
+                    <span className="text-slate-400 block text-[11px]">Telemetry Frequency</span>
+                    <span className="text-lg font-bold font-mono text-slate-100 mt-1 block">15 min</span>
+                    <span className="text-[10px] text-slate-400 mt-1 block">Live Stream Interval</span>
+                  </div>
+                </div>
+              )}
 
             </div>
           </div>
@@ -302,7 +388,7 @@ export default function Landing() {
                 <div className="mt-3 space-y-3">
                   <div>
                     <span className="text-xs text-slate-400">Daily Consumption</span>
-                    <p className="text-lg font-bold font-mono text-slate-200">{calcDailyKwh.toFixed(2)} <span className="text-xs font-normal text-slate-400">kWh / day</span></p>
+                    <p className="text-lg font-bold font-mono text-slate-200">{calcDailyKwh.toFixed(2)} <span className="text-xs font-normal text-slate-400 font-sans">kWh / day</span></p>
                   </div>
                   <div className="pt-2 border-t border-[#182030]">
                     <span className="text-xs text-slate-400">Estimated Monthly Expenditure</span>
@@ -346,7 +432,7 @@ export default function Landing() {
 
           <div className="bg-[#121824] border border-[#1e293b] rounded-xl p-6 space-y-3">
             <div className="w-9 h-9 rounded-lg bg-[#1a2336] border border-[#2a3650] flex items-center justify-center text-slate-200">
-              <Sliders size={18} />
+              <Cpu size={18} />
             </div>
             <h3 className="text-base font-semibold text-slate-100">Built-in Device Library</h3>
             <p className="text-xs text-slate-400 leading-relaxed">

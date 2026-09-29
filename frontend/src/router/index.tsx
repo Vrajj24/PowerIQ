@@ -1,68 +1,54 @@
-import React from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import ProtectedRoute from './ProtectedRoute';
 import DashboardLayout from '../layouts/DashboardLayout';
 import { DeviceProvider } from '../context/DeviceContext';
 
-// Lazy load pages for a highly scalable, enterprise-grade architecture
-const Landing = React.lazy(() => import('../pages/Landing'));
-const Login = React.lazy(() => import('../pages/Login'));
-const Register = React.lazy(() => import('../pages/Register'));
-const Dashboard = React.lazy(() => import('../pages/Dashboard'));
-const Devices = React.lazy(() => import('../pages/Devices'));
-const Analytics = React.lazy(() => import('../pages/Analytics'));
-const Reports = React.lazy(() => import('../pages/Reports'));
-const Alerts = React.lazy(() => import('../pages/Alerts'));
-const Profile = React.lazy(() => import('../pages/Profile'));
-const Settings = React.lazy(() => import('../pages/Settings'));
-
-// Loading fallback component
-const Loader = () => (
-  <div className="flex h-screen w-screen items-center justify-center bg-slate-950">
-    <div className="flex flex-col items-center gap-3">
-      <div className="w-10 h-10 border-4 border-cyan-500/20 border-t-cyan-400 rounded-full animate-spin shadow-neon" />
-      <p className="text-slate-400 text-xs tracking-wider animate-pulse uppercase font-semibold">Loading PowerIQ...</p>
-    </div>
-  </div>
-);
+// Direct page imports to eliminate React.lazy chunk resolution errors & blank screens
+import Landing from '../pages/Landing';
+import Login from '../pages/Login';
+import Register from '../pages/Register';
+import Dashboard from '../pages/Dashboard';
+import Devices from '../pages/Devices';
+import Analytics from '../pages/Analytics';
+import Reports from '../pages/Reports';
+import Alerts from '../pages/Alerts';
+import Profile from '../pages/Profile';
+import Settings from '../pages/Settings';
 
 export default function AppRouter() {
   return (
-    <React.Suspense fallback={<Loader />}>
-      <Routes>
-        {/* Public Routes */}
-        <Route path="/" element={<Landing />} />
-        <Route path="/login" element={<Login />} />
-        <Route path="/register" element={<Register />} />
+    <Routes>
+      {/* Public Routes */}
+      <Route path="/" element={<Landing />} />
+      <Route path="/login" element={<Login />} />
+      <Route path="/register" element={<Register />} />
 
-        {/* Protected Dashboard Routes */}
-        <Route element={<ProtectedRoute />}>
-          <Route
-            path="/*"
-            element={
-              <DeviceProvider>
-                <DashboardLayout>
-                  <Routes>
-                    <Route path="dashboard" element={<Dashboard />} />
-                    <Route path="devices" element={<Devices />} />
-                    <Route path="analytics" element={<Analytics />} />
-                    <Route path="reports" element={<Reports />} />
-                    <Route path="alerts" element={<Alerts />} />
-                    <Route path="profile" element={<Profile />} />
-                    <Route path="settings" element={<Settings />} />
-                    <Route path="" element={<Navigate to="dashboard" replace />} />
-                    <Route path="*" element={<Navigate to="dashboard" replace />} />
-                  </Routes>
-                </DashboardLayout>
-              </DeviceProvider>
-            }
-          />
-        </Route>
+      {/* Protected Dashboard Routes */}
+      <Route element={<ProtectedRoute />}>
+        <Route
+          path="/*"
+          element={
+            <DeviceProvider>
+              <DashboardLayout>
+                <Routes>
+                  <Route path="dashboard" element={<Dashboard />} />
+                  <Route path="devices" element={<Devices />} />
+                  <Route path="analytics" element={<Analytics />} />
+                  <Route path="reports" element={<Reports />} />
+                  <Route path="alerts" element={<Alerts />} />
+                  <Route path="profile" element={<Profile />} />
+                  <Route path="settings" element={<Settings />} />
+                  <Route path="" element={<Navigate to="dashboard" replace />} />
+                  <Route path="*" element={<Navigate to="dashboard" replace />} />
+                </Routes>
+              </DashboardLayout>
+            </DeviceProvider>
+          }
+        />
+      </Route>
 
-
-        {/* Fallbacks */}
-        <Route path="*" element={<Navigate to="/" replace />} />
-      </Routes>
-    </React.Suspense>
+      {/* Fallback */}
+      <Route path="*" element={<Navigate to="/" replace />} />
+    </Routes>
   );
 }

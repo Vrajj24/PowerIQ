@@ -3,7 +3,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { Mail, Lock, AlertTriangle } from 'lucide-react';
+import { Mail, Lock, AlertCircle } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
@@ -18,16 +18,17 @@ const loginSchema = z.object({
 type LoginFormValues = z.infer<typeof loginSchema>;
 
 export default function Login() {
-  const { login } = useAuth();
+  const { login, isAuthenticated } = useAuth();
   const navigate = useNavigate();
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Post-login animation state
-  const [showBootAnim, setShowBootAnim] = useState(false);
-  const [bootProgress, setBootProgress] = useState(0);
-  const [bootStatus, setBootStatus] = useState('CONNECTING SYSTEM...');
-  const [bootExiting, setBootExiting] = useState(false);
+  // If already authenticated, redirect to dashboard immediately
+  useEffect(() => {
+    if (isAuthenticated) {
+      navigate('/dashboard', { replace: true });
+    }
+  }, [isAuthenticated, navigate]);
 
   const {
     register,
@@ -42,58 +43,19 @@ export default function Login() {
     },
   });
 
-  useEffect(() => {
-    if (!showBootAnim) return;
-
-    const interval = setInterval(() => {
-      setBootProgress((prev) => {
-        if (prev >= 100) {
-          clearInterval(interval);
-          return 100;
-        }
-        const increment = Math.floor(Math.random() * 15) + 8;
-        return Math.min(prev + increment, 100);
-      });
-    }, 200);
-
-    return () => clearInterval(interval);
-  }, [showBootAnim]);
-
-  useEffect(() => {
-    if (bootProgress < 30) {
-      setBootStatus('AUTHENTICATING TELEMETRY CHANNEL...');
-    } else if (bootProgress < 60) {
-      setBootStatus('SYNCHRONIZING APPLIANCE MONITORS...');
-    } else if (bootProgress < 90) {
-      setBootStatus('FETCHING REAL-TIME TARIFF DATA...');
-    } else {
-      setBootStatus('SESSION VERIFIED. OPENING DASHBOARD...');
-    }
-  }, [bootProgress]);
-
-  useEffect(() => {
-    if (bootProgress >= 100 && showBootAnim) {
-      const t1 = setTimeout(() => setBootExiting(true), 400);
-      const t2 = setTimeout(() => navigate('/dashboard', { replace: true }), 900);
-      return () => {
-        clearTimeout(t1);
-        clearTimeout(t2);
-      };
-    }
-  }, [bootProgress, showBootAnim, navigate]);
-
   const onSubmit = async (data: LoginFormValues) => {
     setErrorMsg(null);
     setIsSubmitting(true);
     try {
       const success = await login(data.email, data.password);
       if (success) {
-        setShowBootAnim(true);
+        navigate('/dashboard', { replace: true });
       } else {
-        setErrorMsg('Invalid credentials. (Hint: Use any email and password with 6+ characters).');
+        setErrorMsg('Invalid email or password. Please check your credentials and try again.');
       }
-    } catch (err) {
-      setErrorMsg('An error occurred during authentication.');
+    } catch (err: any) {
+      const msg = err?.message || 'Invalid email or password. Please check your credentials and try again.';
+      setErrorMsg(msg);
     } finally {
       setIsSubmitting(false);
     }
@@ -101,39 +63,6 @@ export default function Login() {
 
   return (
     <div className="relative min-h-screen flex items-center justify-center bg-[#090d14] px-4 font-sans text-slate-100">
-      
-      {/* Power-Up Animation Overlay */}
-      {showBootAnim && (
-        <div 
-          className={`absolute inset-0 bg-[#090d14] z-50 flex flex-col items-center justify-center transition-all duration-500 ease-in-out ${
-            bootExiting ? 'opacity-0 scale-95' : 'opacity-100 scale-100'
-          }`}
-        >
-          <div className="w-full max-w-sm px-6 text-center space-y-5">
-            <img src={poweriqLogo} alt="PowerIQ" className="h-12 w-auto object-contain mx-auto brightness-110" />
-
-            <div className="p-4 bg-[#121824] border border-[#1e293b] rounded-xl space-y-3">
-              <div className="w-full bg-[#090d14] h-2 rounded-full overflow-hidden border border-[#1e293b]">
-                <div 
-                  className="bg-slate-200 h-full transition-all duration-200" 
-                  style={{ width: `${bootProgress}%` }}
-                />
-              </div>
-
-              <div className="flex items-center justify-between text-xs font-mono text-slate-400">
-                <span>CONNECTING</span>
-                <span className="text-slate-200 font-bold">{bootProgress}%</span>
-              </div>
-            </div>
-
-            <p className="text-xs font-mono text-slate-400">
-              {bootStatus}
-            </p>
-          </div>
-        </div>
-      )}
-
-      {/* Main Sign-In Form */}
       <div className="w-full max-w-sm z-10 space-y-6">
         
         {/* Logo */}
@@ -148,10 +77,14 @@ export default function Login() {
         <div className="bg-[#121824] border border-[#1e293b] rounded-xl p-6 space-y-5 shadow-xl">
           <h2 className="text-sm font-semibold text-slate-200">Sign In to PowerIQ</h2>
 
+          {/* Prominent Red Error Alert */}
           {errorMsg && (
-            <div className="p-3 rounded-lg bg-rose-950/40 border border-rose-900/60 text-rose-300 text-xs flex items-start gap-2">
-              <AlertTriangle size={15} className="shrink-0 mt-0.5" />
-              <span>{errorMsg}</span>
+            <div className="p-3.5 rounded-lg bg-rose-950/60 border border-rose-800 text-rose-200 text-xs flex items-start gap-2.5 animate-in fade-in">
+              <AlertCircle size={16} className="shrink-0 text-rose-400 mt-0.5" />
+              <div className="space-y-0.5">
+                <p className="font-semibold text-rose-300">Authentication Error</p>
+                <p className="text-rose-200/90 text-[11px] leading-relaxed">{errorMsg}</p>
+              </div>
             </div>
           )}
 
