@@ -1,8 +1,9 @@
 import api from './api';
+import { isLocalSession, mockAccountStore } from './mockAccountStore';
 
 export const reportService = {
   downloadCsv: async (days: number = 7) => {
-    const response = await api.get(`/reports/download/csv?days=${days}`, {
+    const response = isLocalSession() ? { data: ["Timestamp,TotalPowerDraw(kW),ActiveDevices", ...mockAccountStore.history(days).map(r => `${r.timestamp},${r.powerDraw},${r.activeDevices}`)].join("\n") } : await api.get(`/reports/download/csv?days=${days}`, {
       responseType: 'blob'
     });
     
@@ -13,5 +14,6 @@ export const reportService = {
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+    window.URL.revokeObjectURL(url);
   }
 };

@@ -16,17 +16,21 @@ public class DeviceService {
     @Autowired
     private DeviceRepository deviceRepository;
 
+    @Autowired
+    private AccountDataService accountData;
+
     public List<DeviceResponseDTO> getAllDevices() {
-        return deviceRepository.findAll().stream().map(this::mapToDTO).collect(Collectors.toList());
+        return deviceRepository.findByOwnerId(accountData.currentUserId()).stream().map(this::mapToDTO).collect(Collectors.toList());
     }
 
     public DeviceResponseDTO getDeviceById(Long id) {
-        Device device = deviceRepository.findById(id).orElseThrow(() -> new RuntimeException("Device not found"));
+        Device device = deviceRepository.findByIdAndOwnerId(id, accountData.currentUserId()).orElseThrow(() -> new org.springframework.web.server.ResponseStatusException(org.springframework.http.HttpStatus.NOT_FOUND, "Device not found"));
         return mapToDTO(device);
     }
 
     public DeviceResponseDTO createDevice(DeviceCreateDTO dto) {
         Device device = new Device();
+        device.setOwnerId(accountData.currentUserId());
         device.setName(dto.getName());
         device.setType(dto.getType());
         device.setStatus(dto.getStatus());
@@ -38,7 +42,7 @@ public class DeviceService {
     }
 
     public DeviceResponseDTO updateDevice(Long id, DeviceCreateDTO dto) {
-        Device device = deviceRepository.findById(id).orElseThrow(() -> new RuntimeException("Device not found"));
+        Device device = deviceRepository.findByIdAndOwnerId(id, accountData.currentUserId()).orElseThrow(() -> new org.springframework.web.server.ResponseStatusException(org.springframework.http.HttpStatus.NOT_FOUND, "Device not found"));
         device.setName(dto.getName());
         device.setType(dto.getType());
         device.setStatus(dto.getStatus());
@@ -50,9 +54,7 @@ public class DeviceService {
     }
 
     public void deleteDevice(Long id) {
-        if (!deviceRepository.existsById(id)) {
-            throw new RuntimeException("Device not found");
-        }
+        getDeviceById(id);
         deviceRepository.deleteById(id);
     }
 

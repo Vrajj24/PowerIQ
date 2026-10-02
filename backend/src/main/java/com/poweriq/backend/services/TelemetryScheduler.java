@@ -1,12 +1,10 @@
 package com.poweriq.backend.services;
 
-import com.poweriq.backend.dto.DashboardSummaryDTO;
 import com.poweriq.backend.models.Device;
 import com.poweriq.backend.models.TelemetryReading;
 import com.poweriq.backend.repositories.DeviceRepository;
 import com.poweriq.backend.repositories.TelemetryRepository;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
@@ -27,37 +25,24 @@ public class TelemetryScheduler {
     private TelemetryRepository telemetryRepository;
     
     @Autowired
-    private DashboardService dashboardService;
-    
-    @Autowired
     private AlertService alertService;
-
-    @Autowired
-    private SimpMessagingTemplate messagingTemplate;
 
     @Scheduled(fixedRate = 5000)
     @Transactional
     public void captureTelemetry() {
         simulationService.simulateDeviceFluctuations();
 
-        List<Device> devices = deviceRepository.findAll();
-        double totalPower = 0.0;
-        int activeCount = 0;
-
-        for (Device device : devices) {
-            if ("ONLINE".equalsIgnoreCase(device.getStatus())) {
-                totalPower += device.getPowerDraw();
-                activeCount++;
-                
-                // Process rules for alerts
-                alertService.checkAndGenerateAlerts(device);
-            }
+        java.util.Map<Long, List<Device>> groups = deviceRepository.findAll().stream()
+            .filter(d -> d.getOwnerId() != null)
+            .collect(java.util.stream.Collectors.groupingBy(Device::getOwnerId));
+        for (var entry : groups.entrySet()) {
+            double totalPower = entry.getValue().stream().filter(d -> "ONLINE".equalsIgnoreCase(d.getStatus()))
+                .mapToDouble(d -> d.getPowerDraw() == null ? 0 : d.getPowerDraw()).sum() / 1000;
+            int active = (int) entry.getValue().stream().filter(d -> "ONLINE".equalsIgnoreCase(d.getStatus())).count();
+            TelemetryReading reading = new TelemetryReading(totalPower, active, LocalDateTime.now());
+            reading.setOwnerId(entry.getKey());
+            telemetryRepository.save(reading);
+            entry.getValue().stream().filter(d -> "ONLINE".equalsIgnoreCase(d.getStatus())).forEach(alertService::checkAndGenerateAlerts);
         }
-
-        TelemetryReading reading = new TelemetryReading(totalPower, activeCount, LocalDateTime.now());
-        telemetryRepository.save(reading);
-
-        DashboardSummaryDTO summary = dashboardService.getSummary();
-        messagingTemplate.convertAndSend("/topic/telemetry", summary);
     }
 }

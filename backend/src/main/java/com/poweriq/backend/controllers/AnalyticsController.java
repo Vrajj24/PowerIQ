@@ -17,6 +17,9 @@ public class AnalyticsController {
     @Autowired
     private TelemetryRepository telemetryRepository;
 
+    @Autowired
+    private com.poweriq.backend.services.AccountDataService accountData;
+
     @GetMapping("/historical")
     public ResponseEntity<List<AnalyticsDataDTO>> getHistoricalData(
             @RequestParam(defaultValue = "1") int days) {
@@ -25,7 +28,7 @@ public class AnalyticsController {
         LocalDateTime startTime = endTime.minusDays(days);
         
         List<AnalyticsDataDTO> data = telemetryRepository
-            .findByTimestampBetweenOrderByTimestampAsc(startTime, endTime)
+            .findByOwnerIdAndTimestampBetweenOrderByTimestampAsc(accountData.currentUserId(), startTime, endTime)
             .stream()
             .map(t -> new AnalyticsDataDTO(t.getTimestamp(), t.getTotalPowerDraw(), t.getActiveDevices()))
             .collect(Collectors.toList());

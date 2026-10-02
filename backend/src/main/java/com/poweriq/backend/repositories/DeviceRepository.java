@@ -6,4 +6,6 @@ import org.springframework.stereotype.Repository;
 
 @Repository
 public interface DeviceRepository extends JpaRepository<Device, Long> {
+    java.util.List<Device> findByOwnerId(Long ownerId);
+    java.util.Optional<Device> findByIdAndOwnerId(Long id, Long ownerId);
 }

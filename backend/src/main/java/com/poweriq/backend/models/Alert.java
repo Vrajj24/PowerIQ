@@ -10,6 +10,8 @@ import java.time.LocalDateTime;
 @Data
 @NoArgsConstructor
 public class Alert {
+    private Long ownerId;
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;

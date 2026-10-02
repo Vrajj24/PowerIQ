@@ -1,39 +1,24 @@
 package com.poweriq.backend.services;
 
 import com.poweriq.backend.dto.DashboardSummaryDTO;
-import com.poweriq.backend.models.TelemetryReading;
+import com.poweriq.backend.models.Device;
 import com.poweriq.backend.repositories.DeviceRepository;
-import com.poweriq.backend.repositories.TelemetryRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-
-import java.time.LocalDate;
-import java.time.LocalDateTime;
+import java.util.List;
 
 @Service
 public class DashboardService {
+    @Autowired private DeviceRepository devices;
+    @Autowired private AccountDataService accountData;
 
-    @Autowired
-    private TelemetryRepository telemetryRepository;
+    public DashboardSummaryDTO getSummary() { return getSummary(accountData.currentUserId()); }
 
-    @Autowired
-    private DeviceRepository deviceRepository;
-
-    private static final double COST_PER_KWH = 0.12;
-
-    public DashboardSummaryDTO getSummary() {
-        TelemetryReading latest = telemetryRepository.findLatestReading().orElse(null);
-        
-        long totalDevices = deviceRepository.count();
-        
-        Double currentPower = latest != null ? latest.getTotalPowerDraw() : 0.0;
-        Integer activeDevices = latest != null ? latest.getActiveDevices() : 0;
-        
-        // Mocking daily/monthly logic based on current power since we don't have months of data yet
-        Double mockDaily = currentPower * 24 * 0.6; // Assuming 60% load factor for 24h
-        Double mockMonthly = mockDaily * 30;
-        Double estimatedBill = mockMonthly * COST_PER_KWH;
-
-        return new DashboardSummaryDTO(currentPower, mockDaily, mockMonthly, estimatedBill, activeDevices, (int) totalDevices);
+    public DashboardSummaryDTO getSummary(Long ownerId) {
+        List<Device> owned = devices.findByOwnerId(ownerId);
+        List<Device> active = owned.stream().filter(d -> "ONLINE".equalsIgnoreCase(d.getStatus())).toList();
+        double power = active.stream().mapToDouble(d -> d.getPowerDraw() == null ? 0 : d.getPowerDraw()).sum() / 1000;
+        double daily = power * 24 * 0.6;
+        return new DashboardSummaryDTO(power, daily, daily * 30, daily * 30 * 8, active.size(), owned.size());
     }
 }

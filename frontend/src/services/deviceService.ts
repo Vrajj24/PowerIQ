@@ -1,78 +1,33 @@
 import type { Device } from '../types';
 import api from './api';
-import { INITIAL_DEVICES } from '../mock';
-
+import { isLocalSession, mockAccountStore } from './mockAccountStore';
+const map = (dto: any): Device => ({ id: String(dto.id), name: dto.name, type: dto.type,
+  status: dto.status.toLowerCase(), powerDraw: dto.powerDraw ?? 0, roomId: dto.roomId });
+const payload = (device: Device) => ({ name: device.name, type: device.type,
+  status: device.status.toUpperCase(), powerDraw: device.powerDraw, roomId: device.roomId });
 export const deviceService = {
   getDevices: async (): Promise<Device[]> => {
-    try {
-      const response = await api.get('/devices');
-      const data = response.data?.value || response.data;
-      if (!Array.isArray(data)) {
-        return INITIAL_DEVICES;
-      }
-      return data.map((dto: any) => ({
-        id: dto.id ? dto.id.toString() : `dev_${Math.random()}`,
-        name: dto.name || 'Unnamed Appliance',
-        type: dto.type || 'Appliance',
-        status: (dto.status || 'offline').toLowerCase(),
-        powerDraw: dto.powerDraw || 0,
-        roomId: dto.roomId || 'General'
-      }));
-    } catch (e) {
-      console.warn('Backend /devices endpoint unavailable, using mock data:', e);
-      return INITIAL_DEVICES;
-    }
+    if (isLocalSession()) return mockAccountStore.devices();
+    const response = await api.get('/devices');
+    if (!Array.isArray(response.data)) throw new Error('Invalid device response');
+    return response.data.map(map);
   },
-
   updateDevices: async (devices: Device[]): Promise<Device[]> => {
-    try {
-      const updatedDevices = [];
-      for (const device of devices) {
-        if (device.id.startsWith('new_')) {
-          const response = await api.post('/devices', {
-            name: device.name,
-            type: device.type,
-            status: device.status.toUpperCase(),
-            powerDraw: device.powerDraw,
-            roomId: device.roomId
-          });
-          updatedDevices.push({
-            ...device,
-            id: response.data?.id ? response.data.id.toString() : device.id
-          });
-        } else {
-          await api.put(`/devices/${device.id}`, {
-            name: device.name,
-            type: device.type,
-            status: device.status.toUpperCase(),
-            powerDraw: device.powerDraw,
-            roomId: device.roomId
-          });
-          updatedDevices.push(device);
-        }
-      }
-      return updatedDevices;
-    } catch (e) {
-      console.warn('Backend updateDevices failed, returning local state:', e);
-      return devices;
+    if (isLocalSession()) return mockAccountStore.update(devices);
+    const updated: Device[] = [];
+    for (const device of devices) {
+      const response = device.id.startsWith('new_') ? await api.post('/devices', payload(device)) : await api.put(`/devices/${device.id}`, payload(device));
+      updated.push(map(response.data));
     }
+    return updated;
   },
-
-  toggleDeviceStatus: async (deviceId: string, status: 'online' | 'offline'): Promise<boolean> => {
-    try {
-      const getResponse = await api.get(`/devices/${deviceId}`);
-      const device = getResponse.data;
-      
-      await api.put(`/devices/${deviceId}`, {
-        name: device.name,
-        type: device.type,
-        status: status === 'online' ? 'ONLINE' : 'OFFLINE',
-        powerDraw: device.powerDraw,
-        roomId: device.roomId
-      });
-      return true;
-    } catch (e) {
-      return true; // Return true locally so UI toggle state stays responsive
-    }
-  }
+  deleteDevice: async (id: string) => {
+    if (isLocalSession()) { mockAccountStore.remove(id); return; }
+    await api.delete(`/devices/${id}`);
+  },
+  toggleDeviceStatus: async (id: string, status: 'online' | 'offline'): Promise<boolean> => {
+    const device = (await deviceService.getDevices()).find(d => d.id === id);
+    if (!device) throw new Error('Device not found');
+    await deviceService.updateDevices([{ ...device, status }]); return true;
+  },
 };

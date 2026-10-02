@@ -1,5 +1,6 @@
 import type { User } from '../types';
 import api from './api';
+import { initializeMockAccount } from './mockAccountStore';
 
 export const authService = {
   login: async (email: string, password: string): Promise<{ token: string; user: User }> => {
@@ -24,6 +25,7 @@ export const authService = {
       }
 
       console.warn('Backend login unavailable, creating local session:', error);
+      initializeMockAccount(email, true);
       const mockToken = 'jwt_token_' + Date.now();
       const userName = email.split('@')[0].replace('.', ' ');
       const formattedName = userName.charAt(0).toUpperCase() + userName.slice(1);
@@ -58,6 +60,7 @@ export const authService = {
       }
 
       console.warn('Backend registration endpoint unavailable, creating local session:', error);
+      initializeMockAccount(email, false);
       const mockToken = 'jwt_token_' + Date.now();
       const mockUser: User = {
         id: email,

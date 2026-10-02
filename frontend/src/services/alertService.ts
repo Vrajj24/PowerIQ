@@ -1,14 +1,14 @@
 import type { Alert } from '../types';
 import api from './api';
-import { INITIAL_ALERTS } from '../mock';
+import { isLocalSession, mockAccountStore } from './mockAccountStore';
 
 export const alertService = {
   getAlerts: async (): Promise<Alert[]> => {
-    try {
+    if (isLocalSession()) return mockAccountStore.alerts();
       const response = await api.get('/alerts');
       const data = response.data?.value || response.data;
       if (!Array.isArray(data)) {
-        return INITIAL_ALERTS;
+        throw new Error("Invalid alerts response");
       }
       return data.map((item: any) => ({
         id: item.id ? item.id.toString() : `alt_${Math.random()}`,
@@ -19,10 +19,6 @@ export const alertService = {
         read: Boolean(item.read),
         deviceId: item.deviceName
       }));
-    } catch (e) {
-      console.warn('Backend /alerts endpoint unavailable, using mock alerts:', e);
-      return INITIAL_ALERTS;
-    }
   },
 
   markAsRead: async (_alertId: string): Promise<boolean> => {

@@ -23,12 +23,11 @@ public class SimulationService {
         
         for (Device device : devices) {
             if ("ONLINE".equalsIgnoreCase(device.getStatus())) {
-                double basePower = getBasePowerForType(device.getType());
+                double basePower = device.getPowerDraw() == null || device.getPowerDraw() <= 0
+                    ? getBasePowerForType(device.getType()) : device.getPowerDraw();
                 // Fluctuate by +/- 10%
                 double fluctuation = basePower * 0.1 * (random.nextDouble() * 2 - 1);
                 device.setPowerDraw(Math.max(0, basePower + fluctuation));
-            } else {
-                device.setPowerDraw(0.0);
             }
             deviceRepository.save(device);
         }
@@ -36,11 +35,11 @@ public class SimulationService {
 
     private double getBasePowerForType(String type) {
         return switch (type.toUpperCase()) {
-            case "HVAC" -> 3.5;
-            case "LIGHTING" -> 0.2;
-            case "SERVER" -> 1.5;
-            case "APPLIANCE" -> 0.8;
-            default -> 0.5;
+            case "HVAC" -> 2000;
+            case "LIGHTING" -> 15;
+            case "SERVER" -> 1500;
+            case "APPLIANCE" -> 800;
+            default -> 500;
         };
     }
 }

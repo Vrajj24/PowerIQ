@@ -11,6 +11,8 @@ import java.util.Optional;
 
 public interface TelemetryRepository extends JpaRepository<TelemetryReading, Long> {
     
+    List<TelemetryReading> findByOwnerIdAndTimestampBetweenOrderByTimestampAsc(Long ownerId, LocalDateTime startTime, LocalDateTime endTime);
+
     @Query("SELECT t FROM TelemetryReading t ORDER BY t.timestamp DESC LIMIT 1")
     Optional<TelemetryReading> findLatestReading();
 

@@ -11,6 +11,8 @@ import java.time.LocalDateTime;
 @Data
 @NoArgsConstructor
 public class TelemetryReading {
+    private Long ownerId;
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;

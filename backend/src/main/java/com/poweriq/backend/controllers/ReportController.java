@@ -21,21 +21,24 @@ public class ReportController {
     @Autowired
     private TelemetryRepository telemetryRepository;
 
+    @Autowired
+    private com.poweriq.backend.services.AccountDataService accountData;
+
     @GetMapping("/download/csv")
     public ResponseEntity<byte[]> downloadCsvReport(@RequestParam(defaultValue = "7") int days) {
         LocalDateTime endTime = LocalDateTime.now();
         LocalDateTime startTime = endTime.minusDays(days);
         
-        List<TelemetryReading> readings = telemetryRepository.findByTimestampBetweenOrderByTimestampAsc(startTime, endTime);
+        List<TelemetryReading> readings = telemetryRepository.findByOwnerIdAndTimestampBetweenOrderByTimestampAsc(accountData.currentUserId(), startTime, endTime);
         
         StringBuilder csv = new StringBuilder();
-        csv.append("ID,Timestamp,TotalPowerDraw(kW),ActiveDevices\\n");
+        csv.append("ID,Timestamp,TotalPowerDraw(kW),ActiveDevices\n");
         
         for (TelemetryReading reading : readings) {
             csv.append(reading.getId()).append(",")
                .append(reading.getTimestamp()).append(",")
                .append(reading.getTotalPowerDraw()).append(",")
-               .append(reading.getActiveDevices()).append("\\n");
+               .append(reading.getActiveDevices()).append("\n");
         }
         
         byte[] csvBytes = csv.toString().getBytes();
