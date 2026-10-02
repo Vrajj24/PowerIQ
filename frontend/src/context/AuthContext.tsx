@@ -23,7 +23,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     // Check localStorage for existing session
     const token = localStorage.getItem('poweriq_token');
     const savedUser = localStorage.getItem('poweriq_user');
-    
+
     if (token && savedUser) {
       try {
         setUser(JSON.parse(savedUser));

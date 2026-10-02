@@ -5,7 +5,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { User, Mail, Lock, AlertCircle } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
-import poweriqLogo from '../assets/poweriq-logo.png';
+import AuthLayout from '../layouts/AuthLayout';
 import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
 
@@ -67,27 +67,21 @@ export default function Register() {
   };
 
   return (
-    <div className="relative min-h-screen flex items-center justify-center bg-[#090d14] px-4 font-sans text-slate-100">
-      <div className="w-full max-w-sm z-10 space-y-6">
-        
-        {/* Logo */}
-        <div className="flex flex-col items-center text-center">
-          <img src={poweriqLogo} alt="PowerIQ" className="h-10 w-auto object-contain mb-2 brightness-110" />
-          <p className="text-slate-400 text-xs">
-            Create a PowerIQ Telemetry Account
-          </p>
-        </div>
+    <AuthLayout mode="register">
+      <div className="w-full space-y-6">
+
+
 
         {/* Register Panel */}
-        <div className="bg-[#121824] border border-[#1e293b] rounded-xl p-6 space-y-5 shadow-xl">
-          <h2 className="text-sm font-semibold text-slate-200">Register Account</h2>
+        <div className="auth-form-panel space-y-5">
+          <h2 className="auth-form-title">Make yourself power<br />aware.</h2>
 
           {errorMsg && (
-            <div className="p-3.5 rounded-lg bg-rose-950/60 border border-rose-800 text-rose-200 text-xs flex items-start gap-2.5 animate-in fade-in">
-              <AlertCircle size={16} className="shrink-0 text-rose-400 mt-0.5" />
+            <div role="alert" className="p-3.5 rounded-sm bg-rose-100/60 border border-rose-200 text-rose-700 text-xs flex items-start gap-2.5 animate-in fade-in">
+              <AlertCircle size={16} className="shrink-0 text-rose-700 mt-0.5" />
               <div className="space-y-0.5">
-                <p className="font-semibold text-rose-300">Registration Error</p>
-                <p className="text-rose-200/90 text-[11px] leading-relaxed">{errorMsg}</p>
+                <p className="font-semibold text-rose-700">Registration Error</p>
+                <p className="text-rose-700/90 text-[11px] leading-relaxed">{errorMsg}</p>
               </div>
             </div>
           )}
@@ -97,6 +91,7 @@ export default function Register() {
               id="name"
               label="Full Name"
               type="text"
+              autoComplete="name"
               placeholder="e.g. John Doe"
               leftIcon={<User size={15} />}
               error={errors.name?.message}
@@ -105,8 +100,9 @@ export default function Register() {
 
             <Input
               id="email"
-              label="Email Address"
+              label="Email"
               type="email"
+              autoComplete="email"
               placeholder="name@domain.com"
               leftIcon={<Mail size={15} />}
               error={errors.email?.message}
@@ -117,6 +113,7 @@ export default function Register() {
               id="password"
               label="Password"
               type="password"
+              autoComplete="new-password"
               placeholder="••••••••"
               leftIcon={<Lock size={15} />}
               error={errors.password?.message}
@@ -127,6 +124,7 @@ export default function Register() {
               id="confirmPassword"
               label="Confirm Password"
               type="password"
+              autoComplete="new-password"
               placeholder="••••••••"
               leftIcon={<Lock size={15} />}
               error={errors.confirmPassword?.message}
@@ -144,14 +142,14 @@ export default function Register() {
           </form>
         </div>
 
-        <p className="text-center text-xs text-slate-400">
+        <p className="auth-switch">
           Already have an account?{' '}
-          <Link to="/login" className="text-slate-200 hover:underline font-medium">
-            Sign In
+          <Link to="/login" className="text-ink hover:underline font-medium">
+            Sign in
           </Link>
         </p>
 
       </div>
-    </div>
+    </AuthLayout>
   );
 }
