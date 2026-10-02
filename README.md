@@ -1,74 +1,128 @@
-# ⚡ PowerIQ
+# PowerIQ
 
-**PowerIQ** is a comprehensive, full-stack Smart Home Energy Management System. It tracks live power draw, detects anomalous high-load devices, projects estimated utility bills, and provides historical data analysis using a responsive, modern dashboard.
+**Good energy. Less guesswork.**
 
-## 🚀 Features
+PowerIQ helps you understand what your home uses, what it costs, and which appliances contribute to the load. It combines a responsive energy dashboard with device management, historical charts, alerts, and CSV reports.
 
-- **Live Telemetry & Dashboard:** Real-time web socket connections deliver instant updates on active power draw, active device counts, and daily/monthly summaries.
-- **Smart Device Management:** Add, configure, toggle, and delete household devices. Devices have contextual data including rooms and real-time wattage.
-- **Advanced Energy Analytics:** Visualize historical power consumption trends with granular "Today," "7-Day", and "30-Day" interactive charts.
-- **Automated Alerting Engine:** Real-time push notifications warn you if high-load devices (like HVACs) exceed predefined efficiency thresholds.
-- **Reporting & Exporting:** Instantly generate and download CSV usage reports directly to your computer.
-- **Authentication & Security:** Fully secured endpoints with JWT-based Spring Security. File-based H2 database ensures your user and device data persist.
+The current version uses **simulated energy readings**, not hardware telemetry. The homepage product preview is an interactive demonstration.
 
-## 🛠️ Technology Stack
+## What you can do
 
-**Frontend:**
-- React (Vite) with TypeScript
-- Tailwind CSS for sleek, responsive styling
-- Recharts for data visualization
-- Axios for API requests
-- Context API for global state management
-- Lucide React for modern iconography
+- **Manage appliances:** Add, edit, switch on or off, and delete devices, with room and rated-power details.
+- **Follow your energy use:** View current load, simulated usage estimates, active devices, and projected costs.
+- **Explore trends:** Compare readings over 24 hours, 7 days, or 30 days and see room-level load distribution.
+- **Export reports:** Review appliance costs and download account-specific telemetry as CSV.
+- **Estimate costs before signing up:** Use the homepage calculator with your own wattage, daily hours, and tariff.
 
-**Backend:**
-- Java 17 & Spring Boot 3
-- Spring Security + JWT Authentication
-- Spring Data JPA + Hibernate
-- H2 Database (File-based for persistence)
-- WebSockets (`STOMP`) for real-time telemetry
+The interface uses warm cream, muted sage, orange accents, and locally bundled typography. The homepage, authentication pages, and workspace adapt to desktop, tablet, and mobile screens.
 
-## 📋 Prerequisites
+## How account data works
 
-To run PowerIQ locally, ensure you have the following installed:
-- [Node.js](https://nodejs.org/en/) (v16+)
-- [Java Development Kit (JDK) 17](https://adoptium.net/)
-- Docker & Docker Compose (optional, for containerized backend)
+| Account | Initial state |
+| --- | --- |
+| New registration | No devices, zero totals, and empty graphs |
+| Existing account on first upgrade | Its own mock devices and 30 days of simulated history |
+| Account with added devices | Simulated readings generated from its online appliances |
 
-## 🔧 Installation & Setup
+Devices, history, summaries, alerts, and exports belong to the signed-in account. Removing devices persists; restarting the backend does not reseed accounts that have already been initialized. Offline appliances contribute zero active load.
 
-### 1. Clone the Repository
-```bash
+The frontend refreshes account data every five seconds. Dashboard daily and monthly figures are **estimates** based on a 60% load factor; the default dashboard tariff is **INR 8/kWh**. Reports aggregate recorded samples. These figures are demonstrations, not utility-meter measurements.
+
+## Stack
+
+| Layer | Technology |
+| --- | --- |
+| Frontend | React 19, TypeScript, Vite 8, Tailwind CSS 4 |
+| Charts and UI | Recharts, Lucide, locally bundled Barlow Condensed, DM Sans, IBM Plex Mono |
+| Backend | Java 17, Spring Boot 4.1, Spring Security, JWT, Spring Data JPA |
+| Storage | PostgreSQL for deployment; isolated in-memory H2 for development and tests |
+
+## Run locally
+
+Use **Node.js 22.12 or later**, **JDK 17**, and the included Maven wrapper. Start the backend and frontend in separate terminals.
+
+### 1. Clone
+
+```shell
 git clone https://github.com/Vrajj24/PowerIQ.git
 cd PowerIQ
 ```
 
-### 2. Start the Backend (Spring Boot)
-The backend is completely containerized. You can run it via Docker:
-```bash
-cd backend
-docker-compose up -d
-```
-Alternatively, to run natively via Maven:
-```bash
-cd backend
-./mvnw spring-boot:run
-```
-*(The backend runs on `http://localhost:8080`. Upon first startup, it will automatically seed the database with mock devices and 30 days of historical data).*
+### 2. Start the backend
 
-### 3. Start the Frontend (React)
-```bash
+The `dev` profile needs no PostgreSQL setup:
+
+```shell
+cd backend
+./mvnw spring-boot:run -Dspring-boot.run.profiles=dev
+```
+
+On Windows PowerShell:
+
+```powershell
+cd backend
+.\mvnw.cmd spring-boot:run "-Dspring-boot.run.profiles=dev"
+```
+
+The API runs at `http://localhost:8080`. Check `GET /api/health` to confirm it is running. The development database is in memory, so accounts and devices reset when the backend restarts.
+
+### 3. Start the frontend
+
+Create `frontend/.env.local` with:
+
+```dotenv
+VITE_BACKEND_URL=http://localhost:8080
+```
+
+Then run:
+
+```shell
 cd frontend
-npm install
+npm ci
 npm run dev
 ```
-*(The frontend runs on `http://localhost:5173`. Simply navigate to the URL and register an account to get started!).*
 
-## 📖 System Architecture
+Open `http://localhost:5173`, register an account, and add your first appliance. In Windows PowerShell, use `npm.cmd` if script execution policy blocks `npm`.
 
-- **Auth Interceptors:** The React frontend securely attaches JWT tokens to API requests. Response interceptors automatically handle expired sessions by gracefully logging the user out.
-- **Data Generator Engine:** A custom Spring Boot `DataInitializer` populates realistic data alongside historical trends to ensure the dashboard has meaningful analytics upon fresh installs.
-- **Dynamic Contexts:** The React `DeviceContext` consolidates all data fetching (Telemetry, Devices, Alerts) so the UI components maintain a single source of truth.
+Without `VITE_BACKEND_URL`, the frontend targets `https://poweriq.onrender.com`. Restart Vite after changing environment variables.
 
-## 📜 License
-Distributed under the MIT License.
+### Local fallback sessions
+
+If authentication encounters a network failure, the current frontend can create a local demo session. Its devices and history are stored separately per email in browser storage. New demo registrations start empty; existing demo profiles receive mock data once. These sessions are not backend-authenticated accounts and do not sync to PostgreSQL. API errors for real authenticated sessions are displayed rather than replaced with generic mock totals.
+
+## Check your changes
+
+```shell
+# In frontend/
+npm run build
+npm run lint
+
+# In backend/
+./mvnw test
+```
+
+Backend tests use an isolated H2 database and cover account isolation, empty new accounts, simulated readings, persistent deletion, and one-time existing-account initialization.
+
+## Deploy
+
+The frontend is configured for Vercel; the backend includes a Dockerfile for Render. Set `VITE_BACKEND_URL` to your deployed backend URL when building the frontend.
+
+The backend honors Render's `PORT`, binds to `0.0.0.0`, and exposes `/api/health`. PostgreSQL settings depend on the active Spring profile. See [backend deployment instructions](backend/DEPLOYMENT.md) for the required environment variables and account-data migration behavior.
+
+Deploy the matching frontend and backend changes together. The backend Dockerfile packages the files already in `backend/src/main/resources/static`; it does **not** automatically build the separate frontend directory.
+
+## Project layout
+
+```text
+frontend/src/
+  components/     Shared UI, branding, and product preview
+  context/        Authentication and account data
+  pages/          Homepage, auth, and workspace screens
+  services/       API access and local demo storage
+backend/src/
+  main/java/      Controllers, security, services, and models
+  main/resources/ Configuration and packaged static assets
+  test/           Backend regression tests
+```
+
+Bundled font license files are included in [`frontend/src/assets/fonts`](frontend/src/assets/fonts).
