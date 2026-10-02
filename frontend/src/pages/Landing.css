@@ -1,0 +1,93 @@
+.pi-home {
+  --paper: #f5f3e9;
+  --ink: #24291f;
+  --orange: #d64b23;
+  --line: #d5d7ca;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: 'DM Sans', sans-serif;
+}
+.pi-home * { box-sizing: border-box; }
+.pi-home a { color: inherit; text-decoration: none; }
+.pi-home button, .pi-home input, .pi-home select { font: inherit; }
+.pi-home :focus-visible { outline: 2px solid var(--orange); outline-offset: 4px; }
+.pi-home section { scroll-margin-top: 30px; }
+.pi-skip { position: fixed; top: -80px; left: 20px; z-index: 100; padding: 12px; background: var(--ink); color: white!important; }
+.pi-skip:focus { top: 10px; }
+.pi-header { max-width: 1440px; margin: auto; padding: 26px 5%; display: flex; align-items: center; justify-content: space-between; gap: 24px; border-bottom: 1px solid var(--line); }
+.pi-nav, .pi-header-actions { display: flex; align-items: center; gap: 30px; font-size: 14px; }
+.pi-nav a:hover, .pi-login:hover, .pi-footer a:hover { color: var(--orange); }
+.pi-button { display: inline-flex; align-items: center; justify-content: center; background: var(--ink); color: var(--paper)!important; padding: 18px 26px; font-size: 15px; font-weight: 500; transition: background .2s; }
+.pi-button:hover { background: var(--orange); }
+.pi-small { padding: 13px 19px; font-size: 14px; }
+.pi-hero { max-width: 1440px; margin: auto; display: grid; grid-template-columns: 1.1fr 1fr; align-items: center; padding: 40px 5% 65px; gap: 65px; }
+.pi-hero h1 { font: 700 clamp(64px,7.2vw,104px)/.98 'Barlow Condensed',sans-serif; letter-spacing: -1.5px; margin: 0 0 28px; }
+.pi-hero h1 span { color: var(--orange); }
+.pi-description { font-size: 18px; line-height: 1.7; max-width: 385px; color: #626b58; margin: 0 0 32px; }
+.pi-story { max-width: 1440px; margin: auto; padding: 25px 5% 90px; }
+.pi-story h2, .pi-calc-intro h2, .pi-final-cta h2 { font-size: clamp(36px,3.6vw,52px); line-height: 1.18; font-weight: 500; letter-spacing: -1.5px; margin: 0; }
+.pi-home h2 em { font-family: Georgia,serif; font-weight: 400; }
+.pi-feature-grid { display: grid; grid-template-columns: repeat(3,1fr); margin-top: 42px; gap: 40px; }
+.pi-feature { border-top: 1px solid var(--line); padding-top: 25px; }
+.pi-feature h3 { font-size: 21px; font-weight: 500; letter-spacing: -.5px; margin: 0 0 12px; }
+.pi-feature p { font-size: 16px; line-height: 1.7; color: #626b58; max-width: 310px; margin: 0; }
+.pi-calculator { background: #e7e9db; padding: 75px max(5%,calc((100% - 1296px)/2)); display: grid; grid-template-columns: 1fr 1fr; align-items: center; gap: 90px; }
+.pi-calc-intro h2 { font-size: clamp(42px,4.2vw,60px); }
+.pi-calc-intro p { font-size: 17px; line-height: 1.8; color: #626b58; margin: 25px 0 0; }
+.pi-calc-panel { background: var(--paper); padding: 32px; }
+.pi-field { display: block; font-size: 15px; }
+.pi-field input { display: block; width: 100%; margin-top: 10px; padding: 12px 14px; border: 1px solid #b9c3ab; background: #fffef8; color: var(--ink); font-size: 22px; border-radius: 0; }
+.pi-presets { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+.pi-presets button { background: transparent; border: 1px solid #b9c3ab; padding: 7px 10px; font-size: 13px; color: #626b58; }
+.pi-presets .is-selected { background: var(--ink); border-color: var(--ink); color: var(--paper); }
+.pi-hours { display: flex; justify-content: space-between; align-items: center; font-size: 15px; margin-top: 28px; }
+.pi-hours strong { font-size: 17px; font-weight: 500; }
+.pi-range { width: 100%; accent-color: var(--orange); margin: 18px 0 24px; }
+.pi-tariff input { max-width: 150px; }
+.pi-calc-result { background: var(--ink); color: var(--paper); padding: 24px; margin-top: 28px; }
+.pi-calc-result>span { font-size: 15px; }
+.pi-calc-result strong { display: block; font: 600 58px/1.1 'Barlow Condensed',sans-serif; margin-top: 8px; }
+.pi-calc-result small { font: 400 15px 'DM Sans',sans-serif; margin-left: 12px; }
+.pi-calc-disclaimer { font-size: 13px; line-height: 1.6; margin: 16px 0 0; color: #626b58; }
+.pi-final-cta { max-width: 1440px; margin: auto; padding: 85px 5%; display: flex; justify-content: space-between; align-items: center; gap: 30px; }
+.pi-final-cta h2 em { color: var(--orange); }
+.pi-footer { max-width: 1440px; margin: auto; padding: 28px 5%; border-top: 1px solid var(--line); display: flex; justify-content: space-between; align-items: center; gap: 25px; }
+.pi-footer>div { display: flex; gap: 28px; font-size: 14px; }
+@media(max-width:1050px) { .pi-hero { gap: 35px; } .pi-calculator { gap: 45px; } .pi-nav { gap: 20px; } .pi-feature-grid { gap: 25px; } }
+@media(max-width:800px) {
+  .pi-nav { display: none; }
+  .pi-hero { grid-template-columns: 1fr; padding-top: 55px; gap: 45px; }
+  .pi-hero h1 { font-size: clamp(64px,11vw,90px); }
+  .pi-description { max-width: 450px; }
+  .pi-story { padding-bottom: 65px; }
+  .pi-feature-grid { grid-template-columns: 1fr; gap: 28px; margin-top: 32px; }
+  .pi-feature p { max-width: 470px; }
+  .pi-calculator { grid-template-columns: 1fr; padding-block: 55px; gap: 35px; }
+  .pi-final-cta { padding-block: 60px; }
+}
+@media(max-width:480px) {
+  .pi-header { padding-block: 20px; gap: 15px; }
+  .pi-header-actions { gap: 15px; font-size: 14px; }
+  .pi-small { padding: 11px 12px; font-size: 13px; }
+  .pi-hero { padding-top: 45px; padding-bottom: 55px; }
+  .pi-hero h1 { font-size: clamp(46px,14.5vw,68px); letter-spacing: -.6px; }
+  .pi-description { font-size: 16px; }
+  .pi-story h2 { font-size: 34px; }
+  .pi-feature h3 { font-size: 20px; }
+  .pi-calc-panel { padding: 24px 20px; }
+  .pi-calc-result { padding: 20px; }
+  .pi-calc-result strong { font-size: 50px; }
+  .pi-final-cta { align-items: flex-start; flex-direction: column; }
+  .pi-footer { gap: 15px; }
+  .pi-footer>div { gap: 18px; }
+}
+@media(max-width:360px) { .pi-header .poweriq-logo-frame { width: 115px; } .pi-header-actions { gap: 10px; } .pi-small { padding-inline: 10px; } .pi-footer { flex-wrap: wrap; } }
+@media(prefers-reduced-motion:reduce) { .pi-home * { transition: none!important; animation: none!important; } }
+
+@media(max-width:480px) {
+  .pi-field input { font-size:20px; }
+  .pi-home .pi-login { display:inline-flex; align-items:center; min-height:44px; }
+  .pi-home .pi-small { min-height:44px; }
+  .pi-presets button { min-height:40px; }
+  .pi-hero-copy, .pi-calc-panel { min-width:0; }
+}

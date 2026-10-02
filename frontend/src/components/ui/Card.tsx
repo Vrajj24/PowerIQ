@@ -12,8 +12,9 @@ export const Card: React.FC<CardProps> = ({
 }) => {
   return (
     <div
-      className={`bg-[#121824] border border-[#1e293b] rounded-xl p-5 overflow-hidden transition-all duration-200
-        ${hoverEffect ? 'hover:border-[#334155] hover:bg-[#151c2a]' : ''}
+      data-ui="card"
+      className={`bg-surface border border-line rounded-sm p-5 overflow-hidden transition-all duration-200
+        ${hoverEffect ? 'hover:border-line hover:bg-[#faf9f0]' : ''}
         ${className}
       `}
       {...props}
@@ -29,7 +30,7 @@ export const CardHeader: React.FC<React.HTMLAttributes<HTMLDivElement>> = ({
   ...props
 }) => {
   return (
-    <div className={`flex flex-col space-y-1 pb-3 border-b border-[#1e293b] mb-4 ${className}`} {...props}>
+    <div className={`flex flex-col space-y-1 pb-3 border-b border-line mb-4 ${className}`} {...props}>
       {children}
     </div>
   );
@@ -42,7 +43,7 @@ export const CardTitle: React.FC<React.HTMLAttributes<HTMLHeadingElement>> = ({
 }) => {
   return (
     <h3
-      className={`text-sm font-semibold tracking-wide text-slate-100 ${className}`}
+      className={`text-sm font-semibold tracking-wide text-ink ${className}`}
       {...props}
     >
       {children}
@@ -57,7 +58,7 @@ export const CardDescription: React.FC<React.HTMLAttributes<HTMLParagraphElement
 }) => {
   return (
     <p
-      className={`text-xs text-slate-400 font-normal ${className}`}
+      className={`text-xs text-muted font-normal ${className}`}
       {...props}
     >
       {children}
@@ -84,7 +85,7 @@ export const CardFooter: React.FC<React.HTMLAttributes<HTMLDivElement>> = ({
 }) => {
   return (
     <div
-      className={`flex items-center pt-3 border-t border-[#1e293b] mt-4 ${className}`}
+      className={`flex items-center pt-3 border-t border-line mt-4 ${className}`}
       {...props}
     >
       {children}

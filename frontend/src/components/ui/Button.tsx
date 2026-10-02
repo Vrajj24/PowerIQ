@@ -15,20 +15,20 @@ export const Button: React.FC<ButtonProps> = ({
   disabled,
   ...props
 }) => {
-  const baseStyle = 'inline-flex items-center justify-center font-medium tracking-wide transition-all duration-150 focus:outline-none focus-visible:ring-1 focus-visible:ring-slate-400 disabled:opacity-40 disabled:cursor-not-allowed';
+  const baseStyle = 'inline-flex items-center justify-center font-medium tracking-wide transition-all duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 disabled:opacity-40 disabled:cursor-not-allowed';
   
   const variants = {
-    primary: 'bg-slate-100 hover:bg-white text-slate-950 font-semibold border border-slate-200 shadow-sm active:scale-[0.98]',
-    secondary: 'bg-slate-800 hover:bg-slate-700 text-slate-100 font-medium border border-slate-700 active:scale-[0.98]',
-    outline: 'bg-transparent hover:bg-slate-800/60 text-slate-200 border border-slate-700 active:scale-[0.98]',
-    danger: 'bg-rose-950/60 hover:bg-rose-900/80 text-rose-200 border border-rose-800/80 active:scale-[0.98]',
-    ghost: 'bg-transparent hover:bg-slate-800/40 text-slate-300 hover:text-slate-100 border-none',
+    primary: 'bg-ink hover:bg-accent text-paper font-semibold border border-ink shadow-sm active:scale-[0.98]',
+    secondary: 'bg-surface-muted hover:bg-line text-ink font-medium border border-line active:scale-[0.98]',
+    outline: 'bg-transparent hover:bg-surface-muted/60 text-ink border border-line active:scale-[0.98]',
+    danger: 'bg-rose-100/60 hover:bg-rose-100/80 text-rose-700 border border-rose-200/80 active:scale-[0.98]',
+    ghost: 'bg-transparent hover:bg-surface-muted/40 text-ink hover:text-ink border-none',
   };
 
   const sizes = {
-    sm: 'px-3 py-1.5 text-xs rounded-md',
-    md: 'px-4 py-2 text-xs rounded-lg',
-    lg: 'px-5 py-2.5 text-sm rounded-lg',
+    sm: 'px-3 py-1.5 text-xs rounded-sm',
+    md: 'px-4 py-2 text-xs rounded-sm',
+    lg: 'px-5 py-2.5 text-sm rounded-sm',
   };
 
   return (

@@ -29,13 +29,13 @@ class ErrorBoundary extends Component<Props, State> {
   public render() {
     if (this.state.hasError) {
       return (
-        <div className="min-h-screen bg-[#090d14] text-slate-100 flex flex-col items-center justify-center p-6 text-center font-sans">
-          <div className="bg-[#121824] border border-[#1e293b] rounded-xl p-6 max-w-xl space-y-4 shadow-xl text-left">
-            <h2 className="text-lg font-bold text-slate-100">Rendering Exception Caught</h2>
-            <div className="bg-[#090d14] border border-[#1e293b] rounded-lg p-3 font-mono text-xs text-rose-400 overflow-x-auto">
+        <div className="min-h-screen bg-paper text-ink flex flex-col items-center justify-center p-6 text-center font-sans">
+          <div className="bg-surface border border-line rounded-xl p-6 max-w-xl space-y-4 shadow-xl text-left">
+            <h2 className="text-lg font-bold text-ink">Rendering Exception Caught</h2>
+            <div className="bg-paper border border-line rounded-lg p-3 font-mono text-xs text-rose-700 overflow-x-auto">
               <p className="font-bold">{this.state.error?.name}: {this.state.error?.message}</p>
               {this.state.error?.stack && (
-                <pre className="text-[10px] text-slate-400 mt-2 overflow-x-auto whitespace-pre-wrap">
+                <pre className="text-[10px] text-muted mt-2 overflow-x-auto whitespace-pre-wrap">
                   {this.state.error.stack}
                 </pre>
               )}
@@ -45,7 +45,7 @@ class ErrorBoundary extends Component<Props, State> {
                 this.setState({ hasError: false, error: null });
                 window.location.href = '/';
               }}
-              className="px-4 py-2 bg-slate-100 text-slate-950 font-semibold text-xs rounded-lg hover:bg-white transition-all"
+              className="px-4 py-2 bg-ink text-paper font-semibold text-xs rounded-lg hover:bg-accent transition-all"
             >
               Return to Homepage
             </button>

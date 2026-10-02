@@ -33,45 +33,45 @@ export default function Profile() {
       
       {/* Page Header */}
       <div>
-        <h1 className="text-xl font-bold text-slate-100 tracking-tight">Account Profile</h1>
-        <p className="text-slate-400 text-xs mt-0.5">Manage user credentials, contact details, and organization role.</p>
+        <h1 className="text-xl font-bold text-ink tracking-tight">Your corner of PowerIQ</h1>
+        <p className="text-muted text-xs mt-0.5">Keep your account details up to date.</p>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         
         {/* Left Column: Avatar & Summary */}
-        <Card className="md:col-span-1 flex flex-col items-center text-center p-6 space-y-4 bg-[#121824]">
-          <div className="w-20 h-20 rounded-full bg-[#1e293b] border border-slate-700 flex items-center justify-center text-slate-100 font-bold text-2xl">
+        <Card className="md:col-span-1 flex flex-col items-center text-center p-6 space-y-4 bg-surface">
+          <div className="w-20 h-20 rounded-full bg-line border border-line flex items-center justify-center text-ink font-bold text-2xl">
             {initials}
           </div>
           <div>
-            <h3 className="font-semibold text-slate-100 text-sm">{user?.name || 'John Doe'}</h3>
-            <p className="text-xs text-slate-400 font-mono mt-0.5">Energy Analyst</p>
+            <h3 className="font-semibold text-ink text-sm">{user?.name || 'John Doe'}</h3>
+            <p className="text-xs text-muted font-mono mt-0.5">Energy Analyst</p>
           </div>
           
-          <div className="w-full pt-4 border-t border-[#1e293b] space-y-2 text-xs text-left">
+          <div className="w-full pt-4 border-t border-line space-y-2 text-xs text-left">
             <div className="flex justify-between">
-              <span className="text-slate-400">Account Role</span>
-              <span className="text-slate-200 font-medium">Administrator</span>
+              <span className="text-muted">Account Role</span>
+              <span className="text-ink font-medium">Administrator</span>
             </div>
             <div className="flex justify-between">
-              <span className="text-slate-400">Auth Method</span>
-              <span className="text-slate-200 font-mono">JWT Bearer</span>
+              <span className="text-muted">Auth Method</span>
+              <span className="text-ink font-mono">JWT Bearer</span>
             </div>
             <div className="flex justify-between">
-              <span className="text-slate-400">Status</span>
-              <span className="text-emerald-400 font-medium">Active</span>
+              <span className="text-muted">Status</span>
+              <span className="text-emerald-700 font-medium">Active</span>
             </div>
           </div>
         </Card>
 
         {/* Right Column: Edit Profile Form */}
-        <Card className="md:col-span-2 p-6 bg-[#121824]">
+        <Card className="md:col-span-2 p-6 bg-surface">
           <form onSubmit={handleSave} className="space-y-4">
-            <h3 className="text-sm font-semibold text-slate-100 border-b border-[#1e293b] pb-2">Profile Details</h3>
+            <h3 className="text-sm font-semibold text-ink border-b border-line pb-2">Profile Details</h3>
 
             {isSaved && (
-              <div className="p-3 bg-emerald-950/40 border border-emerald-900/60 text-emerald-300 text-xs rounded-lg flex items-center gap-2">
+              <div className="p-3 bg-emerald-100/40 border border-emerald-200/60 text-emerald-700 text-xs rounded-sm flex items-center gap-2">
                 <CheckCircle size={15} />
                 <span>Profile updated successfully</span>
               </div>

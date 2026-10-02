@@ -23,28 +23,30 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(({
   return (
     <div className="w-full flex flex-col gap-1 text-left">
       {label && (
-        <label htmlFor={id} className="text-xs font-medium text-slate-300 tracking-wide">
+        <label htmlFor={id} className="text-xs font-medium text-ink tracking-wide">
           {label}
         </label>
       )}
-      
+
       <div className="relative flex items-center">
         {leftIcon && (
-          <div className="absolute left-3 text-slate-400 flex items-center pointer-events-none">
+          <div className="absolute left-3 text-muted flex items-center pointer-events-none">
             {leftIcon}
           </div>
         )}
-        
+
         <input
           ref={ref}
           id={id}
           type={inputType}
-          className={`w-full bg-[#0d121d] border text-xs text-slate-100 placeholder:text-slate-500 rounded-lg py-2 transition-all duration-150 outline-none
+          aria-invalid={!!error}
+          aria-describedby={error && id ? `${id}-error` : undefined}
+          className={`w-full bg-paper border text-xs text-ink placeholder:text-muted rounded-sm py-2 transition-all duration-150 outline-none
             ${leftIcon ? 'pl-9' : 'pl-3'}
             ${isPassword ? 'pr-9' : 'pr-3'}
-            ${error 
-              ? 'border-rose-500/80 focus:border-rose-500 focus:ring-1 focus:ring-rose-500' 
-              : 'border-[#1e293b] focus:border-slate-400 focus:ring-1 focus:ring-slate-400'
+            ${error
+              ? 'border-rose-200/80 focus:border-rose-200 focus:ring-1 focus:ring-rose-500'
+              : 'border-line focus:border-line focus:ring-1 focus:ring-accent'
             }
             ${className}
           `}
@@ -55,7 +57,8 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(({
           <button
             type="button"
             onClick={() => setShowPassword(!showPassword)}
-            className="absolute right-3 text-slate-400 hover:text-slate-200 flex items-center"
+            aria-label={showPassword ? 'Hide password' : 'Show password'}
+            className="absolute right-3 text-muted hover:text-ink flex items-center"
           >
             {showPassword ? <EyeOff size={15} /> : <Eye size={15} />}
           </button>
@@ -63,7 +66,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(({
       </div>
 
       {error && (
-        <p className="text-[11px] text-rose-400 mt-0.5 font-normal">
+        <p id={id ? `${id}-error` : undefined} className="text-[11px] text-rose-700 mt-0.5 font-normal">
           {error}
         </p>
       )}
