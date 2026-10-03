@@ -90,12 +90,11 @@ input,select,textarea { accent-color:#d64b23; }
 @media(max-width:767px) { .energy-header { height:66px; padding-inline:18px; } .energy-content { padding:20px 16px; } .energy-content h1 { font-size:36px; } .energy-sidebar { width:244px; } .auth-layout { grid-template-columns:1fr; } .auth-story { display:none; } .auth-main { min-height:100dvh; padding:28px 7%; } .auth-mobile-brand { display:block; margin-bottom:45px; } .auth-form-title { font-size:34px; } .auth-form-content { margin-block:auto; } }
 @media(prefers-reduced-motion:reduce) { *,*::before,*::after { animation:none!important; transition:none!important; } }
 
-/* Display the supplied wordmark, trimming its surrounding white canvas in CSS. */
-.poweriq-logo-frame { position:relative; display:block; width:174px; height:43px; overflow:hidden; mix-blend-mode:multiply; }
-.poweriq-logo-frame img { position:absolute; width:256px; height:256px; max-width:none; left:-41px; top:-102px; }
-.pi-footer .poweriq-logo-frame { width:140px; height:35px; }
-.pi-footer .poweriq-logo-frame img { width:206px; height:206px; left:-33px; top:-82px; }
-@media(max-width:480px) { .pi-header .poweriq-logo-frame { width:140px; height:35px; } .pi-header .poweriq-logo-frame img { width:206px; height:206px; left:-33px; top:-82px; } }
+/* Display the transparent wordmark with consistent padding at every size. */
+.poweriq-logo-frame { position:relative; display:block; width:174px; height:46px; overflow:hidden; }
+.poweriq-logo-frame img { position:absolute; width:113%; height:auto; max-width:none; left:-7.64%; top:0; transform:translateY(-26.5%); }
+.pi-footer .poweriq-logo-frame { width:140px; height:37px; }
+@media(max-width:480px) { .pi-header .poweriq-logo-frame { width:140px; height:37px; } }
 
 /* Mobile controls stay readable and within their own content area. */
 .energy-content [data-ui=card], .energy-content .grid>* { min-width:0; }

@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import poweriqLogo from '../assets/poweriq-logo.png';
+const poweriqLogo = `${import.meta.env.BASE_URL}poweriq-logo-transparent.png`;
 
 export default function BootSequence() {
   const navigate = useNavigate();

@@ -16,8 +16,7 @@
 .phone-island { position: absolute; top: 10px; left: 50%; transform: translateX(-50%); width: 83px; height: 24px; background: #121412; border-radius: 20px; box-shadow: inset 0 1px 1px #41453b; }
 .phone-island>span { position: absolute; right: 10px; top: 8px; width: 8px; height: 8px; border-radius: 50%; background: #1b231e; box-shadow: inset 0 0 0 2px #26312b; }
 .phone-app-header { display: flex; align-items: center; justify-content: space-between; padding: 8px 19px 9px; min-height: 43px; border-bottom: 1px solid var(--line); }
-.phone-app-header .poweriq-logo-frame { width: 106px; height: 27px; }
-.phone-app-header .poweriq-logo-frame img { width: 156px; height: 156px; left: -25px; top: -62px; }
+.phone-app-header .poweriq-logo-frame { width: 106px; height: 28px; }
 .phone-live { display: flex; align-items: center; gap: 5px; font-size: 11px; color: #54765b; }
 .phone-live i { width: 5px; height: 5px; background: #54765b; border-radius: 50%; }
 .phone-dashboard { flex: 1; min-height: 0; padding: 10px 19px 0; overflow-y: auto; scrollbar-width: none; }
